@@ -1,0 +1,72 @@
+name: climamania_app
+description: "ClimaMania instaladores (Flutter)"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Gestión de estado (controladores tipo Activity)
+  provider: ^6.1.2
+  # Navegación con shell persistente + guardas de sesión
+  go_router: ^14.6.2
+  # Cliente HTTP (multipart/progreso en fases posteriores)
+  dio: ^5.7.0
+  # Persistencia de sesión (equivalente a SharedPreferences)
+  shared_preferences: ^2.3.3
+  # Abrir tel:, WhatsApp y mapas desde las tarjetas de Inicio
+  url_launcher: ^6.3.1
+  # Formato de fechas en español (es-ES)
+  intl: ^0.20.2
+
+  # Fase 3: cámara/galería, compresión + rotación EXIF, firma, GPS, vídeo
+  image_picker: ^1.1.2
+  flutter_image_compress: ^2.3.0
+  signature: ^5.5.0
+  geolocator: ^13.0.1
+  video_player: ^2.9.2
+
+  # Fase 7: WebView (pestaña Web + visor de PDF/gestiones)
+  webview_flutter: ^4.10.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  # Fase 7 (publicación): genera iconos de app y pantalla de arranque
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.3
+
+# Icono de app (marca de árbol ClimaMania sobre blanco) para iOS y Android.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/branding/app_icon.png"
+  remove_alpha_ios: true
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/branding/app_icon_foreground.png"
+
+# Pantalla de arranque: logo ClimaMania centrado sobre el fondo claro de marca.
+flutter_native_splash:
+  color: "#F1F1F1"
+  image: "assets/branding/splash_logo.png"
+  android: true
+  ios: true
+  android_12:
+    color: "#F1F1F1"
+    image: "assets/branding/app_icon_foreground.png"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
