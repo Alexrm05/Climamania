@@ -1,0 +1,59 @@
+<resources>
+    <!-- Tema general (puede que ya lo tengas definido) -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:colorPrimary">@color/colorPrimary</item>
+        <item name="android:colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="android:colorAccent">@color/colorAccent</item>
+    </style>
+
+    <!-- Estilos de calendario -->
+    <style name="CalendarHeaderText">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/calendarHeaderText</item>
+        <item name="android:gravity">center</item>
+        <item name="android:padding">8dp</item>
+        <item name="android:background">@color/calendarBackground</item>
+    </style>
+
+    <style name="CalendarHourText">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/calendarHourText</item>
+        <item name="android:gravity">center</item>
+        <item name="android:padding">4dp</item>
+    </style>
+
+    <style name="CalendarCell">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/calendarHourText</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@color/calendarBackground</item>
+    </style>
+
+    <style name="CalendarEventText">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/calendarEventText</item>
+        <item name="android:padding">8dp</item>
+        <item name="android:background">@drawable/bg_event</item>
+        <item name="android:gravity">start|center_vertical</item>
+    </style>
+
+    <!-- Diálogos de calendario (detalle de evento / grupo) -->
+    <style name="CalendarDialogTheme" parent="@style/ThemeOverlay.AppCompat.Dialog">
+        <item name="android:windowEnterAnimation">@anim/dialog_event_enter</item>
+        <item name="android:windowExitAnimation">@anim/dialog_event_exit</item>
+        <item name="android:textColorPrimary">@color/colorPrimaryDark</item>
+    </style>
+
+    <style name="PhoneSelectorDialogTheme" parent="@style/ThemeOverlay.AppCompat.Dialog">
+        <item name="android:windowBackground">@drawable/bg_dialog_modern</item>
+        <item name="android:backgroundDimAmount">0.55</item>
+        <item name="android:textColorPrimary">@color/colorPrimaryDark</item>
+        <item name="android:textColorSecondary">#7A7A7A</item>
+        <item name="android:windowMinWidthMajor">85%</item>
+        <item name="android:windowMinWidthMinor">85%</item>
+    </style>
+
+    <style name="Widget.ClimaManiaApp.MaterialButton" parent="Widget.Material3.Button">
+        <item name="cornerRadius">5dp</item>
+    </style>
+</resources>

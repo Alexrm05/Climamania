@@ -1,0 +1,79 @@
+.root {
+  -fx-font-family: "Segoe UI";
+  -fx-base: #0f172a;
+  -fx-background: #0b1220;
+}
+
+.brand-panel {
+  -fx-min-width: 300;
+  -fx-background-color: linear-gradient(to bottom, #0f172a, #1f2937);
+}
+
+.brand-title {
+  -fx-text-fill: #fbbf24;
+  -fx-font-size: 26;
+  -fx-font-weight: bold;
+}
+
+.brand-subtitle {
+  -fx-text-fill: #e5e7eb;
+  -fx-font-size: 16;
+}
+
+.section-title {
+  -fx-text-fill: #111827;
+  -fx-font-size: 20;
+  -fx-font-weight: bold;
+}
+
+.field-label {
+  -fx-text-fill: #111827;
+  -fx-font-size: 12;
+}
+
+.text-field,
+.password-field {
+  -fx-background-color: #ffffff;
+  -fx-border-color: #cbd5f5;
+  -fx-border-radius: 6;
+  -fx-background-radius: 6;
+}
+
+.primary-button {
+  -fx-background-color: #f97316;
+  -fx-text-fill: #ffffff;
+  -fx-font-weight: bold;
+  -fx-background-radius: 8;
+  -fx-padding: 8 18;
+}
+
+.status-label {
+  -fx-text-fill: #ef4444;
+}
+
+.sidebar {
+  -fx-background-color: #0f172a;
+  -fx-min-width: 200;
+}
+
+.sidebar-title {
+  -fx-text-fill: #fbbf24;
+  -fx-font-size: 18;
+  -fx-font-weight: bold;
+}
+
+.sidebar-button {
+  -fx-background-color: transparent;
+  -fx-text-fill: #e2e8f0;
+  -fx-alignment: CENTER_LEFT;
+}
+
+.content-area {
+  -fx-background-color: #f8fafc;
+}
+
+.content-title {
+  -fx-text-fill: #111827;
+  -fx-font-size: 22;
+  -fx-font-weight: bold;
+}

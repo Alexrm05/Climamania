@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_visitas_screen"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="18dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_visitas_hero"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+            <TextView
+                android:id="@+id/txtVisitaEnviarSaludo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hola instalador"
+                android:textColor="@color/colorPrimaryDark"
+                android:textSize="25sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtVisitaEnviarRef"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Visita #0"
+                android:textAllCaps="true"
+                android:textColor="#7A654F"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/txtVisitaEnviarTitulo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Que quieres hacer?"
+            android:textColor="@color/colorPrimaryDark"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_chip_light"
+            android:paddingLeft="11dp"
+            android:paddingTop="5dp"
+            android:paddingRight="11dp"
+            android:paddingBottom="5dp"
+            android:text="Elige la acción para cerrar la gestión"
+            android:textColor="#6A4E35"
+            android:textSize="12sp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardVisitaEnviarResumen"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="#FFFEFC"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="2dp"
+            app:strokeColor="#E5D4C2"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/txtVisitaEnviarCliente"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Cliente"
+                    android:textColor="#1A1F24"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtVisitaEnviarDireccion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/bg_visita_info"
+                    android:padding="12dp"
+                    android:text="Direccion"
+                    android:textColor="#2E3C46"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVisitaEnviarComentarios"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="16dp"
+            android:text="Enviar comentarios escritos"
+            android:textAllCaps="false"
+            android:textColor="#244D86"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:backgroundTint="#EEF4FF"
+            app:cornerRadius="14dp"
+            app:icon="@android:drawable/ic_menu_edit"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconTint="#2D64A8"
+            app:strokeColor="#7D9ED0"
+            app:strokeWidth="2dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVisitaEnviarFotos"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="14dp"
+            android:text="Enviar fotos o videos"
+            android:textAllCaps="false"
+            android:textColor="#205F57"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:backgroundTint="#ECFAF6"
+            app:cornerRadius="14dp"
+            app:icon="@android:drawable/ic_menu_camera"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconTint="#2A8B78"
+            app:strokeColor="#74C2B4"
+            app:strokeWidth="2dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVisitaEnviarPrioridad"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="14dp"
+            android:text="Cambiar prioridad de la visita"
+            android:textAllCaps="false"
+            android:textColor="#7B4C16"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:backgroundTint="#FFF6E8"
+            app:cornerRadius="14dp"
+            app:icon="@android:drawable/ic_menu_sort_by_size"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconTint="#B87716"
+            app:strokeColor="#CF995B"
+            app:strokeWidth="2dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVisitaEnviarFinalizar"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="14dp"
+            android:text="Finalizar / Cancelar visita"
+            android:textAllCaps="false"
+            android:textColor="#2D6038"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:backgroundTint="#EDF8EF"
+            app:cornerRadius="14dp"
+            app:icon="@android:drawable/checkbox_on_background"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconTint="#40955A"
+            app:strokeColor="#78B88A"
+            app:strokeWidth="2dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVisitaEnviarVolver"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="6dp"
+            android:text="Volver"
+            android:textAllCaps="false"
+            android:textColor="#3A4652"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:backgroundTint="#F7F9FB"
+            app:cornerRadius="14dp"
+            app:icon="@android:drawable/ic_media_previous"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconTint="#667382"
+            app:strokeColor="#C6CFD8"
+            app:strokeWidth="1dp" />
+    </LinearLayout>
+</ScrollView>

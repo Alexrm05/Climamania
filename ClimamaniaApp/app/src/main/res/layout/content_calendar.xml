@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:paddingLeft="8dp"
+    android:paddingTop="8dp"
+    android:paddingRight="8dp"
+    android:paddingBottom="2dp">
+
+    <!-- Cabecera con botones de navegación -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <ImageView
+            android:id="@+id/btnPrevWeek"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_week_arrow_left"
+            android:contentDescription="Semana anterior"
+            android:tint="@color/colorPrimaryDark" />
+
+        <TextView
+            android:id="@+id/txtWeekRange"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="dd MMM yyyy - dd MMM yyyy"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark" />
+
+        <TextView
+            android:id="@+id/btnToday"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hoy"
+            android:textSize="12sp"
+            android:textColor="@color/colorPrimaryDark"
+            android:paddingLeft="8dp"
+            android:paddingTop="4dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="4dp"
+            android:background="@drawable/bg_today_button"
+            android:layout_marginEnd="8dp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <ImageView
+            android:id="@+id/btnNextWeek"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_week_arrow_right"
+            android:contentDescription="Semana siguiente"
+            android:tint="@color/colorPrimaryDark" />
+    </LinearLayout>
+
+    <!-- Barra de filtros -->
+    <LinearLayout
+        android:id="@+id/layoutFilters"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:paddingBottom="4dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Filtros:"
+            android:textSize="12sp"
+            android:textColor="@color/colorPrimaryDark"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/txtEquipoFilter"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:text="Todos los equipos"
+            android:textSize="12sp"
+            android:textColor="@android:color/black"
+            android:background="@drawable/bg_edittext"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <Spinner
+            android:id="@+id/spinnerEstadoFilter"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:spinnerMode="dropdown"
+            android:background="@drawable/bg_edittext" />
+
+    </LinearLayout>
+
+    <!-- Contenedor del calendario -->
+    <FrameLayout
+        android:id="@+id/calendarFrame"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <FrameLayout
+                android:id="@+id/calendarOverlay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TableLayout
+                    android:id="@+id/weekTable"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:stretchColumns="*"
+                    android:background="#FFFFFF"
+                    android:divider="@android:color/darker_gray"
+                    android:showDividers="middle"
+                    android:shrinkColumns="*" />
+            </FrameLayout>
+        </ScrollView>
+    </FrameLayout>
+
+</LinearLayout>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/txtDetallePedido"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="17sp"
+            android:textColor="@color/colorPrimaryDark"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/txtDetalleCliente"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="#37474F"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/txtDetalleHora"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="@color/colorPrimary"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/txtDetalleEquipo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="#455A64"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/txtDetalleEstado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="#455A64"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/txtDetalleDireccion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="#455A64"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/txtDetalleTelefono"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="#455A64" />
+
+    </LinearLayout>
+</ScrollView>

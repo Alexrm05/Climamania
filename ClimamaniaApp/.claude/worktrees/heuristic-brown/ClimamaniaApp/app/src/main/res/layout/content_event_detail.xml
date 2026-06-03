@@ -1,0 +1,559 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:background="@android:color/white"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Cabecera destacada -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_detail_hero"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp"
+            android:elevation="2dp">
+
+            <View
+                android:id="@+id/colorStripDetail"
+                android:layout_width="4dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="12dp"
+                android:background="@color/colorPrimary" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtDetalleSaludo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Hola Instalador"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#4E342E" />
+
+                <TextView
+                    android:id="@+id/txtDetalleReferencia"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Referencia 00000"
+                    android:textSize="12sp"
+                    android:textColor="#7B6D63"
+                    android:layout_marginTop="2dp" />
+
+                <TextView
+                    android:id="@+id/txtDetallePedido"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:textSize="24sp"
+                    android:textColor="@color/colorPrimaryDark"
+                    android:layout_marginTop="8dp" />
+
+                <TextView
+                    android:id="@+id/txtDetalleCliente"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="18sp"
+                    android:textColor="#263238"
+                    android:layout_marginTop="2dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:id="@+id/txtDetalleHora"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/colorPrimaryDark"
+                        android:background="@drawable/bg_chip_light"
+                        android:paddingLeft="10dp"
+                        android:paddingRight="10dp"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp" />
+
+                    <TextView
+                        android:id="@+id/txtDetalleEstado"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/colorPrimaryDark"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_chip_light"
+                        android:paddingLeft="10dp"
+                        android:paddingRight="10dp"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/txtDetalleEquipo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"
+                    android:textColor="#607D8B"
+                    android:layout_marginTop="6dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Contacto y ubicación -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_detail_card"
+            android:padding="14dp"
+            android:layout_marginBottom="16dp"
+            android:elevation="1dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Contacto rápido"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:textColor="@color/colorPrimaryDark"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/txtDetalleTelefono"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="#37474F"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/txtDetalleWhatsapp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="#37474F"
+                android:layout_marginBottom="10dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#F1E3D5"
+                android:layout_marginBottom="10dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Dirección y notas"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:textColor="@color/colorPrimaryDark"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/txtDetalleDireccion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="#455A64"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/txtDetalleDetalles"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="#546E7A"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/txtDetalleComentarios"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="#546E7A" />
+        </LinearLayout>
+
+        <!-- Notas privadas -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_section_surface_dark"
+            android:padding="14dp"
+            android:layout_marginBottom="14dp"
+            android:elevation="1dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Notas privadas"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:textColor="@color/colorPrimaryDark"
+                android:paddingBottom="6dp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Solo visible para ti en este dispositivo."
+                android:textSize="12sp"
+                android:textColor="#6F6F6F"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/editComentarioPrivado"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="96dp"
+                android:gravity="top"
+                android:hint="Escribe tu comentario privado..."
+                android:background="@drawable/bg_edittext"
+                android:padding="10dp"
+                android:inputType="textMultiLine"
+                android:textColor="@android:color/black"
+                android:textColorHint="@android:color/darker_gray" />
+
+            <Button
+                android:id="@+id/btnGuardarComentarioPrivado"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:text="Guardar comentario"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_action_primary_soft" />
+        </LinearLayout>
+
+        <!-- Datos de instalación -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_section_surface_orange"
+            android:padding="14dp"
+            android:layout_marginBottom="14dp"
+            android:elevation="1dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Datos de la instalación"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:textColor="@color/colorPrimaryDark"
+                android:paddingBottom="6dp"
+                android:layout_marginBottom="10dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Acceso directo a la ficha completa del pedido."
+                android:textSize="12sp"
+                android:textColor="#6F6F6F"
+                android:layout_marginBottom="10dp" />
+
+            <Button
+                android:id="@+id/btnVerDatosInstalacion"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Abrir ficha completa"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:background="@drawable/bg_action_primary_soft" />
+        </LinearLayout>
+
+        <!-- Fotos -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_section_surface_blue"
+            android:padding="14dp"
+            android:layout_marginBottom="14dp"
+            android:elevation="1dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Fotos de la instalación"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:textColor="@color/colorPrimaryDark"
+                android:paddingBottom="6dp"
+                android:layout_marginBottom="10dp" />
+
+            <Button
+                android:id="@+id/btnFotosCliente"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Fotos del cliente"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_action_blue_soft" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Antes de la visita"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:textColor="#3B7BBB"
+                android:layout_marginBottom="6dp" />
+
+            <!-- Fila 1 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnFotosPrevias"
+                    android:layout_width="0dp"
+                    android:layout_height="70dp"
+                    android:layout_weight="1"
+                    android:text="Fotos\nPrevias"
+                    android:textAllCaps="false"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp"
+                    android:background="@drawable/bg_action_green_soft" />
+
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="0dp" />
+
+                <Button
+                    android:id="@+id/btnFotosIncidencias"
+                    android:layout_width="0dp"
+                    android:layout_height="70dp"
+                    android:layout_weight="1"
+                    android:text="Fotos\nIncidencias"
+                    android:textAllCaps="false"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp"
+                    android:background="@drawable/bg_action_orange_soft" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Durante la instalación"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:textColor="#F29B38"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="6dp" />
+
+            <!-- Fila 2 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <Button
+                    android:id="@+id/btnFotosAcabada"
+                    android:layout_width="0dp"
+                    android:layout_height="70dp"
+                    android:layout_weight="1"
+                    android:text="Fotos\nAcabada"
+                    android:textAllCaps="false"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp"
+                    android:background="@drawable/bg_action_green_soft" />
+
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="0dp" />
+
+                <Button
+                    android:id="@+id/btnFotosConforme"
+                    android:layout_width="0dp"
+                    android:layout_height="70dp"
+                    android:layout_weight="1"
+                    android:text="Fotos\nConforme"
+                    android:textAllCaps="false"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp"
+                    android:background="@drawable/bg_action_green_soft" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Cierre y documentación"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:textColor="#4CAF50"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="6dp" />
+
+            <!-- Fila 3 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <Button
+                    android:id="@+id/btnFotosBOE"
+                    android:layout_width="0dp"
+                    android:layout_height="70dp"
+                    android:layout_weight="1"
+                    android:text="Documento\nBOE"
+                    android:textAllCaps="false"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp"
+                    android:background="@drawable/bg_action_orange_soft" />
+
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="0dp" />
+
+                <Button
+                    android:id="@+id/btnAnadirComentarios"
+                    android:layout_width="0dp"
+                    android:layout_height="70dp"
+                    android:layout_weight="1"
+                    android:text="Añadir\nComentarios"
+                    android:textAllCaps="false"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp"
+                    android:background="@drawable/bg_action_blue_soft" />
+        </LinearLayout>
+        </LinearLayout>
+
+        <!-- Cierre -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_section_surface_green"
+            android:padding="14dp"
+            android:layout_marginBottom="14dp"
+            android:elevation="1dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cierre de instalación"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:textColor="@color/colorPrimaryDark"
+                android:paddingBottom="6dp"
+                android:layout_marginBottom="10dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Marca el trabajo como completado cuando todo esté listo."
+                android:textSize="12sp"
+                android:textColor="#6F6F6F"
+                android:layout_marginBottom="10dp" />
+
+            <Button
+                android:id="@+id/btnFinalizarInstalacion"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Finalizar Instalación"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:background="@drawable/bg_action_green_soft" />
+        </LinearLayout>
+
+        <!-- Navegación -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_section_surface_dark"
+            android:padding="14dp"
+            android:layout_marginBottom="16dp"
+            android:elevation="1dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Navegación rápida"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:textColor="@color/colorPrimaryDark"
+                android:paddingBottom="6dp"
+                android:layout_marginBottom="10dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_horizontal">
+
+                <Button
+                    android:id="@+id/btnConsultarOtra"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_weight="1"
+                    android:text="Consultar otra referencia"
+                    android:textAllCaps="false"
+                    android:textColor="@color/colorPrimaryDark"
+                    android:background="@drawable/bg_action_outline_dark" />
+
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="0dp" />
+
+                <Button
+                    android:id="@+id/btnIrCalendario"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_weight="1"
+                    android:text="Acceder al calendario"
+                    android:textAllCaps="false"
+                    android:textColor="@color/colorPrimaryDark"
+                    android:background="@drawable/bg_action_outline_dark" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Volver"
+            android:textAllCaps="false"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/bg_pill_button_orange"
+            android:textColor="@android:color/white" />
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,23 @@
+<resources>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <!-- Paleta corporativa ClimaMania: naranja + negro + blanco -->
+    <color name="colorPrimary">#F28C3A</color>        <!-- naranja suave principal (botones, acentos) -->
+    <color name="colorPrimaryLight">#F1F1F1</color>   <!-- fondo gris muy claro para mayor contraste -->
+    <color name="colorPrimaryDark">#212121</color>    <!-- casi negro para textos y barras -->
+    <color name="colorAccent">#F28C3A</color>         <!-- acento naranja -->
+    <color name="footerBarBg">#FAFAFA</color>
+    <color name="footerBarStroke">#E6E6E6</color>
+    <color name="footerActiveBg">#FFF1E3</color>
+    <color name="footerInactive">#7A7A7A</color>
+
+    <!-- Colores calendario -->
+    <color name="calendarBackground">#FFFFFF</color>
+    <color name="calendarGridLine">#E0E0E0</color>
+    <color name="calendarHeaderText">#212121</color>
+    <color name="calendarHourText">#757575</color>
+    <color name="calendarEventText">#FFFFFF</color>
+    <color name="calendarEventBackground">@color/colorPrimary</color>
+    <color name="buttonLightBlue">#67C7F8</color>
+
+</resources>

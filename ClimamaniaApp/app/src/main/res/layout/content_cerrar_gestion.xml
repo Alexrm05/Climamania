@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_visitas_screen"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="18dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_visitas_hero"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+            <TextView
+                android:id="@+id/txtCerrarGestionSaludo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hola instalador"
+                android:textColor="@color/colorPrimaryDark"
+                android:textSize="25sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtCerrarGestionRef"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Visita #0"
+                android:textAllCaps="true"
+                android:textColor="#7A654F"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/txtCerrarGestionTitulo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Finalizar visita"
+            android:textColor="@color/colorPrimaryDark"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="#FFFEFC"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="2dp"
+            app:strokeColor="#E5D4C2"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/txtCerrarGestionCliente"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Cliente"
+                    android:textColor="#1A1F24"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtCerrarGestionDireccion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/bg_visita_info"
+                    android:padding="12dp"
+                    android:text="Dirección"
+                    android:textColor="#2E3C46"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_adicionales_card"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/txtCerrarGestionFinalizarTitulo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Finalizar visita"
+                android:textColor="#1A1F24"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtCerrarGestionFinalizarInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="La visita se marcará como resuelta."
+                android:textColor="#475764"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/txtCerrarGestionFinalizarResumenLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Motivo / resumen de la actuación"
+                android:textColor="#2E3C46"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/editCerrarGestionFinalizarResumen"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_edittext"
+                android:gravity="top|start"
+                android:hint="Describe brevemente cómo se ha resuelto la incidencia"
+                android:inputType="textCapSentences|textMultiLine"
+                android:padding="12dp"
+                android:textColor="#1F2933"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCerrarGestionFinalizar"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="12dp"
+                android:text="Finalizar visita"
+                android:textAllCaps="false"
+                android:textColor="#2D6038"
+                android:textStyle="bold"
+                app:backgroundTint="#EDF8EF"
+                app:cornerRadius="14dp"
+                app:icon="@android:drawable/checkbox_on_background"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconTint="#40955A"
+                app:strokeColor="#78B88A"
+                app:strokeWidth="2dp" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="18dp"
+            android:layout_marginBottom="12dp"
+            android:background="#D7DEE5" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_adicionales_card"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/txtCerrarGestionCancelarTitulo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Cancelar visita"
+                android:textColor="#1A1F24"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtCerrarGestionCancelarInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Es obligatorio indicar el motivo de la cancelación."
+                android:textColor="#475764"
+                android:textSize="13sp" />
+
+            <EditText
+                android:id="@+id/editCerrarGestionMotivo"
+                android:layout_width="match_parent"
+                android:layout_height="140dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_edittext"
+                android:gravity="top|start"
+                android:hint="Ejemplo: El cliente no está interesado, no es viable..."
+                android:inputType="textCapSentences|textMultiLine"
+                android:padding="12dp"
+                android:textColor="#1F2933"
+                android:textSize="14sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCerrarGestionCancelar"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="12dp"
+                android:text="Cancelar visita"
+                android:textAllCaps="false"
+                android:textColor="#7A2F2F"
+                android:textStyle="bold"
+                app:backgroundTint="#FFF1F1"
+                app:cornerRadius="14dp"
+                app:icon="@android:drawable/ic_delete"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconTint="#CC4B4B"
+                app:strokeColor="#E28C8C"
+                app:strokeWidth="2dp" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCerrarGestionVolver"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="6dp"
+            android:text="Volver"
+            android:textAllCaps="false"
+            android:textColor="#3A4652"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:backgroundTint="#F7F9FB"
+            app:cornerRadius="14dp"
+            app:icon="@android:drawable/ic_media_previous"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconTint="#667382"
+            app:strokeColor="#C6CFD8"
+            app:strokeWidth="1dp" />
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/drawerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Contenido principal de la pantalla -->
+    <LinearLayout
+        android:id="@+id/baseRoot"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@color/colorPrimaryLight">
+
+        <!-- Cabecera con logo y botón de menú -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:background="@android:color/white"
+            android:elevation="2dp">
+
+            <ImageView
+                android:id="@+id/btnDrawer"
+                android:src="@drawable/ic_menu_bold"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="16dp"
+                android:contentDescription="Abrir menú"
+                android:tint="#424242" />
+
+            <!-- Logo superior -->
+            <ImageView
+                android:id="@+id/logoTop"
+                android:src="@drawable/climamania_logo"
+                android:layout_width="160dp"
+                android:layout_height="40dp"
+                android:layout_centerInParent="true"
+                android:adjustViewBounds="true"
+                android:scaleType="fitCenter" />
+
+            <ImageView
+                android:id="@+id/btnRefresh"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="16dp"
+                android:contentDescription="Recargar"
+                android:src="@android:drawable/ic_popup_sync"
+                android:tint="#424242" />
+        </RelativeLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/colorPrimaryLight" />
+
+        <!-- Contenedor de cada pantalla -->
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/globalSwipeRefresh"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <FrameLayout
+                android:id="@+id/contentFrame"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/footerBarStroke" />
+
+        <!-- Barra inferior -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:background="@drawable/bg_footer_bar"
+            android:elevation="8dp">
+
+            <LinearLayout
+                android:id="@+id/navCalendar"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/bg_footer_item_inactive"
+                android:foreground="?android:attr/selectableItemBackgroundBorderless">
+
+                <ImageView
+                    android:id="@+id/btnCalendarBar"
+                    android:src="@drawable/ic_calendar"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:tint="@color/footerInactive" />
+
+                <TextView
+                    android:id="@+id/txtCalendarBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Calendario"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/footerInactive" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="1dp" />
+
+            <LinearLayout
+                android:id="@+id/navHome"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/bg_footer_item_inactive"
+                android:foreground="?android:attr/selectableItemBackgroundBorderless">
+
+                <ImageView
+                    android:id="@+id/btnHomeBar"
+                    android:src="@drawable/ic_home"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:tint="@color/footerInactive" />
+
+                <TextView
+                    android:id="@+id/txtHomeBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Inicio"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/footerInactive" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="1dp" />
+
+            <LinearLayout
+                android:id="@+id/navRatings"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/bg_footer_item_inactive"
+                android:foreground="?android:attr/selectableItemBackgroundBorderless">
+
+                <ImageView
+                    android:id="@+id/btnRatingsBar"
+                    android:src="@android:drawable/btn_star_big_on"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:tint="@color/footerInactive" />
+
+                <TextView
+                    android:id="@+id/txtRatingsBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Valoraciones"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/footerInactive" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="1dp" />
+
+            <LinearLayout
+                android:id="@+id/navAdicionales"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/bg_footer_item_inactive"
+                android:foreground="?android:attr/selectableItemBackgroundBorderless">
+
+                <ImageView
+                    android:id="@+id/btnAdicionalesBar"
+                    android:src="@android:drawable/ic_menu_add"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:tint="@color/footerInactive" />
+
+                <TextView
+                    android:id="@+id/txtAdicionalesBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Adicionales"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/footerInactive" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="1dp" />
+
+            <LinearLayout
+                android:id="@+id/navWeb"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/bg_footer_item_inactive"
+                android:foreground="?android:attr/selectableItemBackgroundBorderless">
+
+                <ImageView
+                    android:id="@+id/btnWebBar"
+                    android:src="@drawable/ic_web"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:tint="@color/footerInactive" />
+
+                <TextView
+                    android:id="@+id/txtWebBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Web"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/footerInactive" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Menú lateral hamburguesa -->
+    <LinearLayout
+        android:id="@+id/drawerMenu"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:orientation="vertical"
+        android:background="@android:color/white">
+
+        <!-- Cabecera del menú -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:orientation="vertical"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:background="@color/colorPrimaryLight">
+
+            <ImageView
+                android:id="@+id/drawerLogo"
+                android:src="@drawable/climamania_logo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:maxHeight="60dp"
+                android:scaleType="fitCenter" />
+
+            <TextView
+                android:id="@+id/drawerUser"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Instalador"
+                android:textSize="14sp"
+                android:textColor="@color/colorPrimaryDark" />
+        </LinearLayout>
+
+        <!-- Opciones del menú -->
+        <TextView
+            android:id="@+id/menuHome"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:text="Inicio"
+            android:textSize="15sp"
+            android:textColor="#424242"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <TextView
+            android:id="@+id/menuCalendar"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:text="Calendario"
+            android:textSize="15sp"
+            android:textColor="#424242"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <TextView
+            android:id="@+id/menuSearch"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:text="Buscar eventos"
+            android:textSize="15sp"
+            android:textColor="#424242"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <TextView
+            android:id="@+id/menuAdicionales"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:text="Adicionales instalación"
+            android:textSize="15sp"
+            android:textColor="#424242"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <TextView
+            android:id="@+id/menuWeb"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:text="Web ClimaMania"
+            android:textSize="15sp"
+            android:textColor="#424242"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/colorPrimaryLight" />
+
+        <TextView
+            android:id="@+id/menuLogout"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:text="Cerrar sesión"
+            android:textSize="15sp"
+            android:textColor="#B00020"
+            android:background="?android:attr/selectableItemBackground" />
+
+    </LinearLayout>
+</androidx.drawerlayout.widget.DrawerLayout>

@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorPrimaryLight">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingLeft="18dp"
+        android:paddingRight="18dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="24dp">
+
+        <!-- Hero bienvenida -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_detail_hero"
+            android:padding="18dp"
+            android:layout_marginBottom="14dp">
+
+            <TextView
+                android:id="@+id/txtWelcome"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bienvenido NOMBRE DE USUARIO"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/colorPrimaryDark" />
+
+            <TextView
+                android:id="@+id/txtSubtitulo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="14sp"
+                android:textColor="#6F6F6F"
+                android:layout_marginTop="6dp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVisitasPendientes"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="2dp"
+            android:text="Cargando visitas pendientes..."
+            android:textAllCaps="false"
+            android:textStyle="bold"
+            android:textColor="#2D613A"
+            android:visibility="visible"
+            app:backgroundTint="#EEF8F0"
+            app:cornerRadius="14dp"
+            app:icon="@android:drawable/ic_menu_today"
+            app:iconGravity="textStart"
+            app:iconPadding="9dp"
+            app:iconTint="#3A8750"
+            app:strokeColor="#70AE7D"
+            app:strokeWidth="2dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnIncidenciasPendientes"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="14dp"
+            android:text="Cargando incidencias pendientes..."
+            android:textAllCaps="false"
+            android:textStyle="bold"
+            android:textColor="#7A2F2F"
+            android:visibility="visible"
+            app:backgroundTint="#FFF1F1"
+            app:cornerRadius="14dp"
+            app:icon="@android:drawable/ic_dialog_alert"
+            app:iconGravity="textStart"
+            app:iconPadding="9dp"
+            app:iconTint="#CC4B4B"
+            app:strokeColor="#E28C8C"
+            app:strokeWidth="2dp" />
+
+        <!-- Buscador de eventos (arriba) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/layoutSearch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:strokeWidth="1dp"
+            app:strokeColor="#EFE2D6">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+            <TextView
+                android:id="@+id/txtSearchLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Buscar eventos"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/colorPrimaryDark"
+                android:layout_marginBottom="8dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <EditText
+                    android:id="@+id/editSearchQuery"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:hint="Cliente, pedido, dirección, teléfono..."
+                    android:drawableStart="@android:drawable/ic_menu_search"
+                    android:drawablePadding="8dp"
+                    android:background="@drawable/bg_edittext"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:inputType="text"
+                    android:textColor="@android:color/black"
+                    android:textColorHint="@android:color/darker_gray" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSearchEvents"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:text="Buscar"
+                    android:textAllCaps="false"
+                    android:textSize="14sp"
+                    android:layout_marginLeft="8dp"
+                    android:textColor="@android:color/white"
+                    app:backgroundTint="@color/colorPrimary"
+                    app:cornerRadius="5dp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/txtSearchHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Introduce cualquier dato del evento y pulsa Buscar."
+                android:textSize="12sp"
+                android:textColor="#777777"
+                android:layout_marginTop="6dp"/>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Resumen de instalaciones -->
+        <LinearLayout
+            android:id="@+id/layoutResumen"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Resumen de hoy"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/colorPrimaryDark"
+                android:layout_marginBottom="6dp" />
+
+            <!-- Card instalación en curso -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardInstEnCursoResumen"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="3dp"
+                app:cardBackgroundColor="@android:color/white"
+                app:strokeWidth="1dp"
+                app:strokeColor="#EFE2D6">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_home"
+                        android:tint="@color/colorPrimary"
+                        android:contentDescription="Instalación en curso" />
+
+                    <TextView
+                        android:id="@+id/txtInstEnCursoTitulo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Instalación en curso"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/colorPrimaryDark"
+                        android:background="@drawable/bg_section_label_green"
+                        android:paddingLeft="10dp"
+                        android:paddingRight="10dp"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp" />
+                </LinearLayout>
+
+                <!-- Meta: día, hora, equipo, estado -->
+                <TextView
+                    android:id="@+id/txtInstEnCursoMeta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="13sp"
+                    android:textColor="#6D4C41"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_chip_light"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/txtInstalacionEnCurso"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Instalación en curso: cargando..."
+                    android:textSize="19sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimary"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Información de dirección -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_address_highlight"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/txtInstEnCursoDireccion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Dirección no disponible"
+                        android:textSize="14sp"
+                        android:textColor="#37474F"
+                        android:maxLines="3"
+                        android:ellipsize="end"
+                        android:layout_marginBottom="10dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnMapaInstEnCurso"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:text="Maps"
+                            android:textAllCaps="false"
+                            android:textSize="12sp"
+                            android:textColor="@android:color/white"
+                            app:backgroundTint="@color/colorPrimary"
+                            app:cornerRadius="5dp" />
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="1dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnLlamarInstEnCurso"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:text="Llamar"
+                            android:textAllCaps="false"
+                            android:textSize="12sp"
+                            android:textColor="@android:color/white"
+                            app:backgroundTint="@color/colorPrimary"
+                            app:cornerRadius="5dp" />
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="1dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnWhatsappInstEnCurso"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:text="Mensaje"
+                            android:textAllCaps="false"
+                            android:textSize="12sp"
+                            android:textColor="@android:color/white"
+                            app:backgroundTint="@color/colorPrimary"
+                            app:cornerRadius="5dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card próxima instalación -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardProximaResumen"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="3dp"
+                app:cardBackgroundColor="@android:color/white"
+                app:strokeWidth="1dp"
+                app:strokeColor="#EFE2D6">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_calendar"
+                        android:tint="@color/colorPrimary"
+                        android:contentDescription="Próxima instalación" />
+
+                    <TextView
+                        android:id="@+id/txtProximaTitulo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Próxima instalación"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/colorPrimaryDark"
+                        android:background="@drawable/bg_title_underline"
+                        android:paddingBottom="6dp" />
+                </LinearLayout>
+
+                <!-- Meta: día, hora, equipo, estado -->
+                <TextView
+                    android:id="@+id/txtProximaMeta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="13sp"
+                    android:textColor="#6D4C41"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_chip_light"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/txtProximaInstalacion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Próxima instalación: cargando..."
+                    android:textSize="19sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimary"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Información de dirección -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_address_highlight"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/txtProximaDireccion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Dirección no disponible"
+                        android:textSize="14sp"
+                        android:textColor="#37474F"
+                        android:maxLines="3"
+                        android:ellipsize="end"
+                        android:layout_marginBottom="10dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnMapaProxima"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:text="Maps"
+                            android:textAllCaps="false"
+                            android:textSize="12sp"
+                            android:textColor="@android:color/white"
+                            app:backgroundTint="@color/colorPrimary"
+                            app:cornerRadius="5dp" />
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="1dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnLlamarProxima"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:text="Llamar"
+                            android:textAllCaps="false"
+                            android:textSize="12sp"
+                            android:textColor="@android:color/white"
+                            app:backgroundTint="@color/colorPrimary"
+                            app:cornerRadius="5dp" />
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="1dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnWhatsappProxima"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:text="Mensaje"
+                            android:textAllCaps="false"
+                            android:textSize="12sp"
+                            android:textColor="@android:color/white"
+                            app:backgroundTint="@color/colorPrimary"
+                            app:cornerRadius="5dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

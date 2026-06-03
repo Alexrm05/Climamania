@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path
+        name="cache_all"
+        path="." />
+    <external-cache-path
+        name="cache_ext_all"
+        path="." />
+
+    <cache-path
+        name="images"
+        path="images/" />
+
+    <cache-path
+        name="visitas"
+        path="visitas/" />
+
+    <cache-path
+        name="incidencias"
+        path="incidencias/" />
+
+    <external-cache-path
+        name="images_ext"
+        path="images/" />
+</paths>

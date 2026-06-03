@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="filter_equipos">
+        <item>Todos los equipos</item>
+        <item>FCB</item>
+        <item>FCB2</item>
+        <item>JZ</item>
+        <item>JS</item>
+        <item>MA</item>
+        <item>CLM1</item>
+    </string-array>
+
+    <string-array name="filter_estados">
+        <item>Todos los estados</item>
+        <item>Solo finalizados</item>
+        <item>Solo sin finalizar</item>
+        <item>Solo eventos excepcionales</item>
+        <item>Solo visitas</item>
+    </string-array>
+
+</resources>

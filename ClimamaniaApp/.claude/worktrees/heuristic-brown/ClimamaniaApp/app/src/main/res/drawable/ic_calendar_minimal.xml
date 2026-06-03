@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Marco exterior -->
+    <item>
+        <shape android:shape="rectangle">
+            <size android:width="24dp" android:height="24dp" />
+            <solid android:color="@android:color/transparent" />
+            <stroke
+                android:width="2dp"
+                android:color="#424242" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+
+    <!-- Barra superior -->
+    <item android:top="5dp">
+        <shape android:shape="rectangle">
+            <size android:height="4dp" />
+            <solid android:color="#424242" />
+        </shape>
+    </item>
+
+    <!-- Anillas del calendario -->
+    <item android:left="6dp" android:top="2dp">
+        <shape android:shape="rectangle">
+            <size android:width="3dp" android:height="4dp" />
+            <solid android:color="#424242" />
+        </shape>
+    </item>
+
+    <item android:right="6dp" android:top="2dp">
+        <shape android:shape="rectangle">
+            <size android:width="3dp" android:height="4dp" />
+            <solid android:color="#424242" />
+        </shape>
+    </item>
+</layer-list>
+
