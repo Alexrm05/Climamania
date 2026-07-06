@@ -4,20 +4,31 @@ import 'package:provider/provider.dart';
 
 import '../../../services/session_service.dart';
 import '../../../theme/app_colors.dart';
+import '../../calendar/calendar_controller.dart';
+import '../nav_destinations.dart';
 
 /// Menú lateral (drawer) de 280dp. Réplica del menú de `activity_base.xml`:
 /// cabecera con logo + "Hola, {nombre}" y las opciones de navegación.
+///
+/// En el shell recibe [navigationShell] y navega por rama conservando estado.
+/// En las pantallas de detalle (empujadas sobre el shell) [navigationShell] es
+/// null y navega con `context.go`, igual que la `DetailBottomBar`.
 class AppDrawer extends StatelessWidget {
-  final StatefulNavigationShell navigationShell;
+  final StatefulNavigationShell? navigationShell;
 
-  const AppDrawer({super.key, required this.navigationShell});
+  const AppDrawer({super.key, this.navigationShell});
 
   void _goBranch(BuildContext context, int index) {
     Navigator.of(context).pop(); // cerrar drawer
-    navigationShell.goBranch(
-      index,
-      initialLocation: index == navigationShell.currentIndex,
-    );
+    final shell = navigationShell;
+    if (shell != null) {
+      shell.goBranch(
+        index,
+        initialLocation: index == shell.currentIndex,
+      );
+    } else {
+      context.go(kNavDestinations[index].route);
+    }
   }
 
   @override
@@ -80,6 +91,9 @@ class AppDrawer extends StatelessWidget {
             color: AppColors.logoutRed,
             onTap: () async {
               Navigator.of(context).pop();
+              // Limpiar la caché en memoria del calendario para no filtrar los
+              // eventos de este usuario al siguiente que inicie sesión.
+              CalendarController.clearCache();
               await context.read<SessionService>().clear();
               if (context.mounted) context.go('/login');
             },

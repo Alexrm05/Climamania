@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 
 /// Pantalla provisional "Próximamente / En construcción".
 /// - Como rama del shell ([standalone] = false): solo el contenido centrado.
@@ -46,9 +48,6 @@ class ComingSoonScreen extends StatelessWidget {
 
     if (!standalone) return content;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: content,
-    );
+    return DetailScaffold(activeIndex: NavBranch.home, child: content);
   }
 }

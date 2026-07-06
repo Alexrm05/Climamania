@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/external_actions.dart';
 import '../../data/repositories/home_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
+import '../calendar/event_styles.dart';
 import '../shell/refresh_signal.dart';
 import 'home_controller.dart';
 import 'widgets/greeting_hero.dart';
@@ -74,15 +76,17 @@ class _HomeViewState extends State<_HomeView> {
   }
 
   Future<void> _openMaps(String? direccion) async {
-    final d = (direccion ?? '').trim();
-    if (d.isEmpty) {
-      _msg('Dirección no disponible');
+    await ExternalActions.openMaps(context, direccion ?? '');
+  }
+
+  /// Abre el pedido solo si la referencia es válida (contiene algún dígito),
+  /// igual que `isPedidoValido` en Android; si no, avisa y no navega.
+  void _openPedido(String referencia, String cliente) {
+    if (!EventStyles.isPedidoValido(referencia)) {
+      _msg('Este evento no tiene pedido asociado');
       return;
     }
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(d)}',
-    );
-    await _launch(uri, 'No se pudo abrir el mapa');
+    context.push('/pedido', extra: {'ref': referencia, 'cliente': cliente});
   }
 
   Future<void> _call(String? telefono) async {
@@ -158,10 +162,8 @@ class _HomeViewState extends State<_HomeView> {
                 onWhatsapp: () => _whatsapp(
                     c.enCurso.data?.whatsapp, c.enCurso.data?.telefono),
                 onTap: c.enCurso.hasData
-                    ? () => context.push('/pedido', extra: {
-                          'ref': c.enCurso.data!.referencia,
-                          'cliente': c.enCurso.data!.cliente,
-                        })
+                    ? () => _openPedido(c.enCurso.data!.referencia,
+                        c.enCurso.data!.cliente)
                     : null,
               ),
               const SizedBox(height: 10),
@@ -173,10 +175,8 @@ class _HomeViewState extends State<_HomeView> {
                 onWhatsapp: () => _whatsapp(
                     c.proxima.data?.whatsapp, c.proxima.data?.telefono),
                 onTap: c.proxima.hasData
-                    ? () => context.push('/pedido', extra: {
-                          'ref': c.proxima.data!.referencia,
-                          'cliente': c.proxima.data!.cliente,
-                        })
+                    ? () => _openPedido(c.proxima.data!.referencia,
+                        c.proxima.data!.cliente)
                     : null,
               ),
             ],

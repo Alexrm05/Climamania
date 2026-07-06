@@ -23,6 +23,7 @@ class SearchResult {
   final String detailTitle;
   final String navRef;
   final String navCliente;
+  final String navId;
 
   const SearchResult({
     required this.title,
@@ -36,6 +37,7 @@ class SearchResult {
     required this.detailTitle,
     this.navRef = '',
     this.navCliente = '',
+    this.navId = '',
   });
 }
 
@@ -213,6 +215,9 @@ class EventSearchController extends ChangeNotifier {
       kind: kind,
       canOpen: g.id.isNotEmpty && g.id != 'null' && g.id != '0',
       detailTitle: esVisita ? 'Detalle de visita' : 'Detalle de incidencia',
+      navId: g.id,
+      navRef: g.referencia,
+      navCliente: g.cliente,
     );
   }
 

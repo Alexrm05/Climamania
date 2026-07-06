@@ -12,6 +12,15 @@ class CalendarController extends ChangeNotifier {
 
   CalendarController(this._repo, this._session);
 
+  // Caché en memoria compartida (como la estática de CalendarActivity): render
+  // inmediato desde caché + recarga en segundo plano. La clave incluye el
+  // usuario para no mezclar datos entre cuentas del mismo rol/equipo.
+  static final Map<String, List<Evento>> _cache = {};
+
+  /// Vacía la caché de eventos. Debe llamarse al cerrar sesión para no filtrar
+  /// los eventos de un usuario a otro que inicie sesión en el mismo proceso.
+  static void clearCache() => _cache.clear();
+
   static const estadoOptions = <String>[
     'Todos los estados',
     'Solo finalizados',
@@ -63,7 +72,17 @@ class CalendarController extends ChangeNotifier {
   }
 
   Future<void> load() async {
-    loading = true;
+    final key =
+        '${_session.rol}|${_session.readEquipo()}|${_session.usuarioForRequests}';
+    final cached = _cache[key];
+    if (cached != null) {
+      // Pintado inmediato desde caché; la recarga sigue en segundo plano.
+      _eventos = cached;
+      loading = false;
+      errorMsg = null;
+    } else {
+      loading = true;
+    }
     errorMsg = null;
     _notify();
     try {
@@ -73,15 +92,21 @@ class CalendarController extends ChangeNotifier {
         usuario: _session.usuarioForRequests,
       );
       if (!resp.success) {
-        errorMsg =
-            resp.message.isEmpty ? 'Error al cargar eventos' : resp.message;
-        _eventos = [];
+        // Si teníamos caché válida la conservamos; si no, mostramos el error.
+        if (cached == null) {
+          errorMsg =
+              resp.message.isEmpty ? 'Error al cargar eventos' : resp.message;
+          _eventos = [];
+        }
       } else {
         _eventos = resp.eventos;
+        _cache[key] = resp.eventos;
       }
     } catch (_) {
-      errorMsg = 'Error de conexión al cargar eventos';
-      _eventos = [];
+      if (cached == null) {
+        errorMsg = 'Error de conexión al cargar eventos';
+        _eventos = [];
+      }
     }
     // Solo desarrollo: datos de muestra para previsualizar sin backend.
     if (_eventos.isEmpty && const bool.fromEnvironment('DEMO_EVENTS')) {

@@ -3,11 +3,16 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/external_actions.dart';
 import '../../data/models/pedido.dart';
+import '../../data/repositories/incidencia_repository.dart';
 import '../../data/repositories/pedido_repository.dart';
+import '../../data/repositories/visita_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 import 'pedido_controller.dart';
 
 /// Detalle del pedido. Réplica de PedidoDetailActivity + content_pedido_detail.
@@ -27,6 +32,8 @@ class PedidoDetailScreen extends StatelessWidget {
       create: (ctx) => PedidoController(
         ctx.read<PedidoRepository>(),
         ctx.read<SessionService>(),
+        ctx.read<VisitaRepository>(),
+        ctx.read<IncidenciaRepository>(),
         referencia: referencia,
         clienteHint: clienteHint,
       )..init(),
@@ -68,33 +75,69 @@ class _PedidoViewState extends State<_PedidoView> {
     }
   }
 
-  Future<void> _openMaps(String dir) async {
-    if (dir.trim().isEmpty) {
-      _msg('Dirección no disponible');
-      return;
-    }
-    await _launch(
-      Uri.parse(
-          'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(dir.trim())}'),
-      'No se pudo abrir el mapa',
+  /// Selector de teléfonos (Móvil/Fijo, con "Principal") cuando hay más de uno;
+  /// si solo hay uno lo devuelve directamente. Réplica de `mostrarSelectorTelefono`.
+  Future<String?> _pickPhone(PedidoController c) async {
+    final phones = c.telefonos;
+    if (phones.isEmpty) return null;
+    if (phones.length == 1) return phones.first;
+    return showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(14),
+              child: Text('Selecciona un teléfono',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+            ),
+            for (var i = 0; i < phones.length; i++)
+              ListTile(
+                leading: Icon(
+                    c.phoneLabel(phones[i]) == 'Móvil'
+                        ? Icons.smartphone
+                        : Icons.call,
+                    color: AppColors.primary),
+                title: Text(phones[i]),
+                subtitle: Text(c.phoneLabel(phones[i])),
+                trailing: i == 0
+                    ? const Text('Principal',
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.textSecondary))
+                    : null,
+                onTap: () => Navigator.pop(sheetCtx, phones[i]),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
-  Future<void> _call(String tel) async {
-    if (tel.trim().isEmpty) {
+  Future<void> _callFlow(PedidoController c) async {
+    if (c.telefonos.isEmpty) {
       _msg('Teléfono no disponible');
       return;
     }
+    final tel = await _pickPhone(c);
+    if (tel == null || !mounted) return;
     await _launch(Uri.parse('tel:${tel.trim()}'), 'No se pudo iniciar la llamada');
   }
 
-  Future<void> _whatsapp(String tel) async {
-    final digits = tel.replaceAll(RegExp(r'\D'), '');
-    if (digits.isEmpty) {
+  Future<void> _whatsappFlow(PedidoController c) async {
+    if (c.telefonos.isEmpty) {
       _msg('WhatsApp no disponible');
       return;
     }
-    await _launch(Uri.parse('https://wa.me/$digits'), 'No se pudo abrir WhatsApp');
+    final tel = await _pickPhone(c);
+    if (tel == null || !mounted) return;
+    final num = c.whatsappNumber(tel);
+    if (num.isEmpty) {
+      _msg('WhatsApp no disponible');
+      return;
+    }
+    await _launch(Uri.parse('https://wa.me/$num'), 'No se pudo abrir WhatsApp');
   }
 
   Future<void> _guardarComentario(PedidoController c) async {
@@ -105,10 +148,10 @@ class _PedidoViewState extends State<_PedidoView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(title: const Text('Ficha del pedido')),
-      body: Consumer<PedidoController>(
+    return DetailScaffold(
+      activeIndex: NavBranch.home,
+      onReload: () => context.read<PedidoController>().load(),
+      child: Consumer<PedidoController>(
         builder: (context, c, _) {
           if (c.loading) {
             return const Center(child: CircularProgressIndicator());
@@ -128,7 +171,6 @@ class _PedidoViewState extends State<_PedidoView> {
           return _content(c);
         },
       ),
-      bottomNavigationBar: _bottomActions(),
     );
   }
 
@@ -139,14 +181,75 @@ class _PedidoViewState extends State<_PedidoView> {
         _hero(c),
         if (c.equipoTexto.isNotEmpty)
           _section('Equipo asignado', _bodyText(c.equipoTexto)),
-        if (c.detalleLineas.isNotEmpty)
-          _section('Detalle del pedido', _detalleTable(c.detalleLineas)),
+        _section('Detalle del pedido', _detalleTable(c.detalleLineas)),
         if (c.observaciones.isNotEmpty)
           _section('Observaciones del cliente', _bodyText(c.observaciones)),
+        _previasSection(c),
         _section('Comentarios del instalador', _comentarios(c)),
         _section('Fotografías', _fotos(c)),
+        const SizedBox(height: 14),
+        _bottomActions(),
       ],
     );
+  }
+
+  /// Secciones "Visitas previas" e "Incidencias previas" asociadas al pedido.
+  Widget _previasSection(PedidoController c) {
+    if (!c.previasCargadas) return const SizedBox.shrink();
+    final children = <Widget>[];
+    if (c.visitasPrevias.isNotEmpty) {
+      children.add(_section(
+        'Visitas previas',
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+                'Se han encontrado ${c.visitasPrevias.length} '
+                'visita(s) previa(s) asociada(s) a esta referencia.',
+                style: const TextStyle(color: Color(0xFF424242))),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton(
+                onPressed: () => context.push('/visitas-previas', extra: {
+                  'items': c.visitasPrevias,
+                  'referencia': c.referencia,
+                }),
+                child: const Text('Ver detalles de la visita'),
+              ),
+            ),
+          ],
+        ),
+      ));
+    }
+    if (c.incidenciasPrevias.isNotEmpty) {
+      children.add(_section(
+        'Incidencias previas',
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+                'Se han encontrado ${c.incidenciasPrevias.length} '
+                'incidencia(s) previa(s) asociada(s) a esta referencia.',
+                style: const TextStyle(color: Color(0xFF424242))),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton(
+                onPressed: () => context.push('/incidencias-previas', extra: {
+                  'items': c.incidenciasPrevias,
+                  'referencia': c.referencia,
+                }),
+                child: const Text('Ver incidencias previas'),
+              ),
+            ),
+          ],
+        ),
+      ));
+    }
+    return Column(children: children);
   }
 
   Widget _hero(PedidoController c) {
@@ -214,27 +317,27 @@ class _PedidoViewState extends State<_PedidoView> {
             valueStyle: const TextStyle(
                 fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF263238)),
             icon: Icons.map,
-            onTap: () => _openMaps(c.direccion),
+            onTap: () => ExternalActions.openMaps(context, c.direccion),
           ),
           const SizedBox(height: 10),
           _contactRow(
             value: c.telefonoPrincipal.isNotEmpty
-                ? c.telefonoPrincipal
+                ? 'Teléfono: ${c.telefonoPrincipal}'
                 : 'Teléfono no disponible',
             valueStyle: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF37474F)),
             icon: Icons.call,
-            onTap: () => _call(c.telefonoPrincipal),
+            onTap: () => _callFlow(c),
           ),
           const SizedBox(height: 10),
           _contactRow(
             value: c.telefonoPrincipal.isNotEmpty
-                ? c.telefonoPrincipal
+                ? 'WhatsApp: ${c.telefonoPrincipal}'
                 : 'WhatsApp no disponible',
             valueStyle: const TextStyle(
                 fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF37474F)),
             icon: Icons.send,
-            onTap: () => _whatsapp(c.telefonoPrincipal),
+            onTap: () => _whatsappFlow(c),
           ),
         ],
       ),
@@ -321,7 +424,20 @@ class _PedidoViewState extends State<_PedidoView> {
     return Column(
       children: [
         row('CTD', 'Código', 'Descripción', header: true),
-        for (final l in lineas) row(l.cantidad, l.referencia, l.nombre),
+        if (lineas.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Sin artículos',
+                  style: TextStyle(color: AppColors.textSecondary)),
+            ),
+          )
+        else
+          for (final l in lineas)
+            row(l.cantidad.isEmpty ? '0' : l.cantidad,
+                l.referencia.isEmpty ? 'Sin datos' : l.referencia,
+                l.nombre.isEmpty ? 'Sin datos' : l.nombre),
       ],
     );
   }

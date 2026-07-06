@@ -17,7 +17,7 @@ class VisitaRepository {
     return (ok, msg.isEmpty ? (ok ? okMsg : 'No se pudo completar') : msg);
   }
 
-  Future<(bool, List<GestionItem>)> getPendientes({
+  Future<({bool ok, String message, List<GestionItem> items})> getPendientes({
     required String rol,
     required String equipo,
     required String usuario,
@@ -28,7 +28,14 @@ class VisitaRepository {
         query: {'rol': rol, 'equipo': equipo, 'usuario': usuario},
         noCache: true,
       );
-      if (json['success'] != true) return (false, <GestionItem>[]);
+      if (json['success'] != true) {
+        final msg = _s(json['message']);
+        return (
+          ok: false,
+          message: msg.isEmpty ? 'No se pudieron cargar las visitas pendientes' : msg,
+          items: <GestionItem>[],
+        );
+      }
       final list = <GestionItem>[];
       final raw = json['visitas'];
       if (raw is List) {
@@ -38,9 +45,41 @@ class VisitaRepository {
           }
         }
       }
-      return (true, list);
+      return (ok: true, message: '', items: list);
     } catch (_) {
-      return (false, <GestionItem>[]);
+      return (
+        ok: false,
+        message: 'Error de conexión al cargar visitas pendientes',
+        items: <GestionItem>[],
+      );
+    }
+  }
+
+  /// Visitas realizadas (histórico) para calcular las "visitas previas" del
+  /// pedido. Réplica de `get_visitas_realizadas_busqueda.php`.
+  Future<List<GestionItem>> getRealizadas({
+    required String rol,
+    required String equipo,
+    required String usuario,
+  }) async {
+    try {
+      final json = await _api.getJson(
+        AppConfig.getVisitasRealizadas,
+        query: {'rol': rol, 'equipo': equipo, 'usuario': usuario},
+        noCache: true,
+      );
+      final list = <GestionItem>[];
+      final raw = json['visitas'] ?? json['data'];
+      if (raw is List) {
+        for (final e in raw) {
+          if (e is Map) {
+            list.add(GestionItem.fromVisita(Map<String, dynamic>.from(e)));
+          }
+        }
+      }
+      return list;
+    } catch (_) {
+      return <GestionItem>[];
     }
   }
 
@@ -216,12 +255,14 @@ class VisitaRepository {
     String resumen = '',
   }) async {
     try {
-      final json = await _api.postForm(AppConfig.visitaCerrar, {
+      // Como Android: para una visita solo se envía `motivo` al cancelar;
+      // `resumen_actuacion` es exclusivo de incidencias, aquí nunca se manda.
+      final fields = {
         ..._base(idVisita: idVisita, rol: rol, usuario: usuario, equipo: equipo, autor: autor),
         'accion': accion,
-        'motivo': motivo,
-        'resumen_actuacion': resumen,
-      });
+        if (accion == 'cancelar') 'motivo': motivo,
+      };
+      final json = await _api.postForm(AppConfig.visitaCerrar, fields);
       return _result(json, accion == 'finalizar' ? 'Visita finalizada' : 'Visita cancelada');
     } catch (_) {
       return (false, 'Error al cerrar la visita');

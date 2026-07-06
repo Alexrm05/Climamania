@@ -22,6 +22,10 @@ class AppConfig {
   static const String getPedido = 'get_pedido.php';
   static const String addComentario = 'add_comentario.php';
 
+  // Previas asociadas a un pedido (mostradas en el detalle del pedido).
+  static const String getIncidenciasPreviasPorReferencia =
+      'get_incidencias_previas_por_referencia.php';
+
   // Flujo de instalación (Fase 3)
   static const String uploadFoto = 'upload_foto.php';
   static const String getFoto = 'get_foto.php';
@@ -67,6 +71,37 @@ class AppConfig {
   /// URL para mostrar una foto/documento por su ruta (get_foto.php?doc=...).
   static String fotoUrl(String doc) =>
       '${baseUrl}get_foto.php?api_key=$apiKey&doc=${Uri.encodeComponent(doc)}';
+
+  // Bases directas de ficheros usadas como fallback (con y sin TLS), igual que
+  // PhotoListActivity/VisitaDetalleActivity/IncidenciaDetalleActivity.
+  static const List<String> _fileBases = <String>[
+    'https://clminstal.es/',
+    'https://app.clminstal.es/',
+    'http://clminstal.es/',
+    'http://app.clminstal.es/',
+  ];
+
+  /// Lista de URLs candidatas para una ruta de fichero, en orden de intento.
+  /// Réplica de `buildPhotoCandidates` de Android:
+  /// 1) si `ruta` ya es absoluta (http/https) se usa tal cual;
+  /// 2) `get_foto.php?doc=...`;
+  /// 3) `https://clminstal.es/<ruta>`, `https://app.clminstal.es/<ruta>` y sus
+  ///    variantes `http://`.
+  /// Las pantallas prueban cada candidata y se quedan con la que cargue.
+  static List<String> buildPhotoCandidates(String ruta) {
+    final r = ruta.trim();
+    if (r.isEmpty) return const [];
+    final lower = r.toLowerCase();
+    if (lower.startsWith('http://') || lower.startsWith('https://')) {
+      return [r];
+    }
+    final rel = r.startsWith('/') ? r.substring(1) : r;
+    final out = <String>[fotoUrl(r)];
+    for (final base in _fileBases) {
+      out.add('$base$rel');
+    }
+    return out;
+  }
 
   // Web (fases posteriores)
   static const String installWebBase =

@@ -7,18 +7,25 @@ class Prioridad {
 
   static const opciones = ['Alta', 'Media', 'Baja'];
 
+  /// Normaliza la prioridad. Usa igualdad exacta (no `contains`, que producía
+  /// falsos positivos como "anormal" → "normal" → Media). Los valores numéricos
+  /// se mapean 3+/2/≤1. Un valor desconocido se muestra tal cual (con estilo de
+  /// prioridad baja), igual que `parsePrioridad` en Android.
   static String parse(String? raw) {
     final clean = UiText.sanitizeDbValue(raw);
     if (clean.isEmpty) return 'Sin prioridad';
-    final lower = clean.toLowerCase();
-    if (lower.contains('alta') || lower.contains('high') || lower.contains('urgente')) {
-      return 'Alta';
-    }
-    if (lower.contains('media') || lower.contains('medio') || lower.contains('normal')) {
-      return 'Media';
-    }
-    if (lower.contains('baja') || lower.contains('low')) {
-      return 'Baja';
+    switch (clean.toLowerCase()) {
+      case 'alta':
+      case 'high':
+      case 'urgente':
+        return 'Alta';
+      case 'media':
+      case 'medio':
+      case 'normal':
+        return 'Media';
+      case 'baja':
+      case 'low':
+        return 'Baja';
     }
     final n = int.tryParse(clean);
     if (n != null) {
@@ -26,7 +33,7 @@ class Prioridad {
       if (n == 2) return 'Media';
       return 'Baja';
     }
-    return 'Sin prioridad';
+    return clean; // literal desconocido, preservado
   }
 
   static Color bg(String label) {
@@ -42,10 +49,12 @@ class Prioridad {
     }
   }
 
+  // Texto blanco solo sobre los fondos intensos (Alta/Media); el resto (Baja,
+  // Sin prioridad y literales desconocidos) usa texto oscuro sobre fondo claro.
   static Color fg(String label) =>
-      label == 'Baja' || label == 'Sin prioridad'
-          ? const Color(0xFF1F2937)
-          : Colors.white;
+      label == 'Alta' || label == 'Media'
+          ? Colors.white
+          : const Color(0xFF1F2937);
 
   static Color stroke(String label) {
     switch (label) {

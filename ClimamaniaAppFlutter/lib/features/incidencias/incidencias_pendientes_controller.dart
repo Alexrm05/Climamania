@@ -27,16 +27,16 @@ class IncidenciasPendientesController extends ChangeNotifier {
     loading = true;
     errorMsg = null;
     if (!_disposed) notifyListeners();
-    final (ok, list) = await _repo.getPendientes(
+    final res = await _repo.getPendientes(
       rol: _session.rol,
       equipo: _session.readEquipo(),
       usuario: _session.usuarioForRequests,
     );
     if (_disposed) return;
-    if (ok) {
-      incidencias = list;
+    if (res.ok) {
+      incidencias = res.items;
     } else {
-      errorMsg = 'No se pudieron cargar las incidencias';
+      errorMsg = res.message;
       incidencias = [];
     }
     loading = false;

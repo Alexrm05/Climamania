@@ -7,6 +7,8 @@ import '../../data/repositories/pedido_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 
 /// Hub del flujo "Realizar instalación". Réplica de InstallActivity.
 class InstallScreen extends StatefulWidget {
@@ -28,6 +30,12 @@ class _InstallScreenState extends State<InstallScreen> {
     super.initState();
     _notaCtrl.text =
         context.read<SessionService>().privateNote(widget.referencia);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.referencia.trim().isEmpty) {
+        _msg('Referencia no disponible');
+      }
+    });
     _cargarEstadoFotos();
   }
 
@@ -60,13 +68,16 @@ class _InstallScreenState extends State<InstallScreen> {
     _msg('Comentario guardado en este dispositivo');
   }
 
-  void _abrirFotos(String categoria, String titulo, String clave) {
-    context.push('/fotos', extra: {
+  Future<void> _abrirFotos(String categoria, String titulo, String clave) async {
+    await context.push('/fotos', extra: {
       'titulo': titulo,
       'referencia': widget.referencia,
       'categoria': categoria,
       'clave': clave,
     });
+    // Al volver, refrescar el estado de los botones (verde si hay fotos),
+    // como hace InstallActivity en onResume.
+    if (mounted) await _cargarEstadoFotos();
   }
 
   Future<void> _anadirComentario() async {
@@ -92,7 +103,11 @@ class _InstallScreenState extends State<InstallScreen> {
         ],
       ),
     );
-    if (texto == null || texto.isEmpty || !mounted) return;
+    if (texto == null || !mounted) return;
+    if (texto.isEmpty) {
+      _msg('El comentario está vacío');
+      return;
+    }
     final session = context.read<SessionService>();
     final repo = context.read<PedidoRepository>();
     final (ok, msg) = await repo.addComentario(
@@ -103,17 +118,19 @@ class _InstallScreenState extends State<InstallScreen> {
     if (mounted) _msg(ok ? 'Comentario guardado' : msg);
   }
 
-  void _firmaConforme() {
-    context.push('/conforme', extra: {
+  Future<void> _firmaConforme() async {
+    await context.push('/conforme', extra: {
       'referencia': widget.referencia,
       'cliente': widget.cliente,
     });
+    if (mounted) await _cargarEstadoFotos();
   }
 
-  void _finalizar() {
+  Future<void> _finalizar() async {
     // Sin confirmación aquí: lleva al formulario; la confirmación está al final
     // (botón "Finalizar ahora" de la pantalla de finalizar).
-    context.push('/finalizar', extra: {'referencia': widget.referencia});
+    await context.push('/finalizar', extra: {'referencia': widget.referencia});
+    if (mounted) await _cargarEstadoFotos();
   }
 
   bool _tieneFotos(String cat) =>
@@ -121,65 +138,74 @@ class _InstallScreenState extends State<InstallScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(title: const Text('Realizar instalación')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+    return DetailScaffold(
+      activeIndex: NavBranch.home,
+      onReload: _cargarEstadoFotos,
+      child: Column(
         children: [
-          _header(),
-          _notas(),
-          _seccion('Fotografías y documentación', Column(
-            children: [
-              _fotoBtn('Fotos previas', 'previas', 'PREINST'),
-              _fotoBtn('Fotos incidencias', 'incidencias', 'DURINST'),
-              _fotoBtn('Fotos acabada', 'acabada', 'POSTINST'),
-              _fotoBtn('Fotos conforme', 'conforme', 'CONFCLI'),
-              _fotoBtn('Documento BOE', 'boe', 'DOCUBOE'),
-            ],
-          )),
-          _seccion('Acciones', Column(
-            children: [
-              _accionBtn('Añadir comentarios', Icons.comment, _anadirComentario),
-              const SizedBox(height: 10),
-              _accionBtn('Firma conforme cliente', Icons.draw, _firmaConforme),
-            ],
-          )),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _finalizar,
-                    child: const Text('Finalizar instalación'),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: OutlinedButton(
-                    onPressed: () => context.pop(),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryDark,
-                      side: const BorderSide(color: AppColors.primaryDark),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5)),
-                    ),
-                    child: const Text('Volver'),
-                  ),
-                ),
-              ),
-            ],
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _header(),
+                _notas(),
+                _seccion('Fotografías y documentación', Column(
+                  children: [
+                    _fotoBtn('Fotos previas', 'previas', 'PREINST'),
+                    _fotoBtn('Fotos incidencias', 'incidencias', 'DURINST'),
+                    _fotoBtn('Fotos acabada', 'acabada', 'POSTINST'),
+                    _fotoBtn('Fotos conforme', 'conforme', 'CONFCLI'),
+                    _fotoBtn('Documento BOE', 'boe', 'DOCUBOE'),
+                  ],
+                )),
+                _seccion('Acciones', Column(
+                  children: [
+                    _accionBtn(
+                        'Añadir comentarios', Icons.comment, _anadirComentario),
+                    const SizedBox(height: 10),
+                    _accionBtn(
+                        'Firma conforme cliente', Icons.draw, _firmaConforme),
+                  ],
+                )),
+              ],
+            ),
           ),
-        ),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _finalizar,
+                        child: const Text('Finalizar instalación'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: OutlinedButton(
+                        onPressed: () => context.pop(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primaryDark,
+                          side: const BorderSide(color: AppColors.primaryDark),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5)),
+                        ),
+                        child: const Text('Volver'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

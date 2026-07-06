@@ -8,10 +8,13 @@ import '../../data/repositories/incidencia_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 
 /// Gestión de una incidencia. Réplica de IncidenciaEnviarActivity.
 class IncidenciaEnviarScreen extends StatefulWidget {
   final String idIncidencia;
+  final String referencia;
   final String cliente;
   final String direccion;
   final String poblacion;
@@ -19,6 +22,7 @@ class IncidenciaEnviarScreen extends StatefulWidget {
   const IncidenciaEnviarScreen({
     super.key,
     required this.idIncidencia,
+    this.referencia = '',
     this.cliente = '',
     this.direccion = '',
     this.poblacion = '',
@@ -71,10 +75,14 @@ class _IncidenciaEnviarScreenState extends State<IncidenciaEnviarScreen> {
         ],
       ),
     );
-    if (texto == null || texto.isEmpty || !mounted) return;
+    if (texto == null || !mounted) return;
+    if (texto.isEmpty) {
+      _msg('Debes escribir un comentario');
+      return;
+    }
     setState(() => _busy = true);
     final c = _ctx();
-    final (ok, msg) = await _repo.enviarComentario(
+    final (_, msg) = await _repo.enviarComentario(
       idIncidencia: widget.idIncidencia,
       rol: c['rol']!,
       usuario: c['usuario']!,
@@ -125,7 +133,7 @@ class _IncidenciaEnviarScreenState extends State<IncidenciaEnviarScreen> {
       if (media == null || !mounted) return;
       setState(() => _busy = true);
       final c = _ctx();
-      final (ok, msg) = media.isVideo
+      final (_, msg) = media.isVideo
           ? await _repo.enviarFotoPath(
               idIncidencia: widget.idIncidencia,
               rol: c['rol']!,
@@ -148,6 +156,9 @@ class _IncidenciaEnviarScreenState extends State<IncidenciaEnviarScreen> {
             );
       if (mounted) setState(() => _busy = false);
       _msg(msg);
+    } on MediaTooLargeException catch (e) {
+      if (mounted) setState(() => _busy = false);
+      _msg(e.message);
     } catch (_) {
       if (mounted) setState(() => _busy = false);
       _msg('No se pudo procesar el archivo');
@@ -171,7 +182,7 @@ class _IncidenciaEnviarScreenState extends State<IncidenciaEnviarScreen> {
     if (sel == null || !mounted) return;
     setState(() => _busy = true);
     final c = _ctx();
-    final (ok, msg) = await _repo.cambiarPrioridad(
+    final (_, msg) = await _repo.cambiarPrioridad(
       idIncidencia: widget.idIncidencia,
       rol: c['rol']!,
       usuario: c['usuario']!,
@@ -184,21 +195,21 @@ class _IncidenciaEnviarScreenState extends State<IncidenciaEnviarScreen> {
   }
 
   Future<void> _cerrar() async {
-    await context.push('/cerrar-gestion', extra: {
+    final r = await context.push('/cerrar-gestion', extra: {
       'tipo': 'incidencia',
       'id': widget.idIncidencia,
       'cliente': widget.cliente,
       'direccion': widget.direccion,
       'poblacion': widget.poblacion,
     });
+    if (r == true && mounted) context.pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(title: Text('Gestionar incidencia #${widget.idIncidencia}')),
-      body: Stack(
+    return DetailScaffold(
+      activeIndex: NavBranch.home,
+      child: Stack(
         children: [
           ListView(
             padding: const EdgeInsets.all(16),
@@ -215,7 +226,8 @@ class _IncidenciaEnviarScreenState extends State<IncidenciaEnviarScreen> {
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: AppColors.primaryDark)),
-                    if (widget.direccion.isNotEmpty)
+                    if (widget.direccion.isNotEmpty ||
+                        widget.poblacion.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(

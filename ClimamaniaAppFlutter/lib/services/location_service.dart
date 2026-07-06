@@ -21,7 +21,22 @@ class LocationException implements Exception {
 /// usa la última posición conocida si es reciente, si no pide una nueva
 /// con timeout de 12s.
 class LocationService {
+  bool _capturing = false;
+
   Future<CapturedLocation> capture() async {
+    // Guard de reentrada (como Android: "Ya se está obteniendo la ubicación").
+    if (_capturing) {
+      throw LocationException('Ya se está obteniendo la ubicación');
+    }
+    _capturing = true;
+    try {
+      return await _capture();
+    } finally {
+      _capturing = false;
+    }
+  }
+
+  Future<CapturedLocation> _capture() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw LocationException('Activa la ubicación del dispositivo');
@@ -63,6 +78,18 @@ class LocationService {
     } on LocationException {
       rethrow;
     } catch (_) {
+      // Al agotar el tiempo, reintentamos con la última posición conocida
+      // (sin límite de antigüedad), como hace EventLocationCaptureHelper antes
+      // de fallar. En interior, esto suele resolver por red donde el fix nuevo
+      // no llega a tiempo.
+      try {
+        final last = await Geolocator.getLastKnownPosition();
+        if (last != null && _isValid(last)) {
+          return CapturedLocation(last.latitude, last.longitude);
+        }
+      } catch (_) {
+        // Ignoramos y lanzamos el error genérico.
+      }
       throw LocationException(
           'No se pudo obtener una ubicación válida. Inténtalo de nuevo');
     }

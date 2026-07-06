@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Permite tráfico HTTP en claro a los dominios del backend, para los
+     fallbacks http:// de fotos/ficheros y recursos del WebView. Réplica del
+     network_security_config de la app Android original. -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">clminstal.es</domain>
+        <domain includeSubdomains="true">climamania.com</domain>
+    </domain-config>
+</network-security-config>

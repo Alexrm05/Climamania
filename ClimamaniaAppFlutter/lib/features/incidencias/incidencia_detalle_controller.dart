@@ -9,7 +9,16 @@ class IncidenciaDetalleController extends ChangeNotifier {
   final SessionService _session;
   final String idIncidencia;
 
-  IncidenciaDetalleController(this._repo, this._session, this.idIncidencia);
+  /// Referencia asociada (llega desde la lista/búsqueda y se actualiza con la
+  /// que devuelve el servidor, para propagarla luego a "Gestionar incidencia").
+  String referencia;
+
+  IncidenciaDetalleController(
+    this._repo,
+    this._session,
+    this.idIncidencia, {
+    this.referencia = '',
+  });
 
   bool loading = true;
   String? errorMsg;
@@ -33,10 +42,13 @@ class IncidenciaDetalleController extends ChangeNotifier {
       rol: _session.rol,
       equipo: _session.readEquipo(),
       usuario: _session.usuarioForRequests,
+      referencia: referencia,
     );
     if (_disposed) return;
     if (res.ok && res.detalle != null) {
       detalle = res.detalle;
+      final serverRef = res.detalle!.visita.referencia;
+      if (serverRef.isNotEmpty) referencia = serverRef;
     } else {
       errorMsg =
           res.message.isEmpty ? 'No se pudo cargar la incidencia' : res.message;

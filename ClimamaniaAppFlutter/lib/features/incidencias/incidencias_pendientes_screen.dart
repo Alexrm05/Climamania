@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/external_actions.dart';
 import '../../data/models/gestion_item.dart';
 import '../../data/repositories/incidencia_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 import '../visitas/widgets/visita_card.dart';
 import 'incidencias_pendientes_controller.dart';
 
@@ -32,40 +34,26 @@ String _codigo(GestionItem i) =>
 class _View extends StatelessWidget {
   const _View();
 
-  Future<void> _launch(BuildContext context, Uri uri) async {
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {}
-  }
+  String _dir(GestionItem v) => [
+        if (v.direccion.isNotEmpty) v.direccion,
+        if (v.poblacion.isNotEmpty) v.poblacion,
+      ].join(', ');
 
-  void _maps(BuildContext context, GestionItem v) {
-    final dir = [
-      if (v.direccion.isNotEmpty) v.direccion,
-      if (v.poblacion.isNotEmpty) v.poblacion,
-    ].join(', ');
-    if (dir.isEmpty) return;
-    _launch(
-        context,
-        Uri.parse(
-            'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(dir)}'));
-  }
-
-  void _call(BuildContext context, GestionItem v) {
-    if (v.telefono.isNotEmpty) _launch(context, Uri.parse('tel:${v.telefono}'));
-  }
-
-  void _message(BuildContext context, GestionItem v) {
-    if (v.telefono.isEmpty) return;
-    final body = Uri.encodeComponent('Hola ${v.cliente}, ');
-    _launch(context, Uri.parse('sms:${v.telefono}?body=$body'));
+  void _openIncidencia(BuildContext context, GestionItem v) {
+    final id = v.id.trim();
+    if (id.isEmpty || id == '0' || id.toLowerCase() == 'null') {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ID de incidencia no disponible')));
+      return;
+    }
+    context.push('/incidencia', extra: {'id': id, 'referencia': v.referencia});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(title: const Text('Incidencias pendientes')),
-      body: Consumer<IncidenciasPendientesController>(
+    return DetailScaffold(
+      activeIndex: NavBranch.home,
+      child: Consumer<IncidenciasPendientesController>(
         builder: (context, c, _) {
           if (c.loading) {
             return const Center(child: CircularProgressIndicator());
@@ -95,10 +83,11 @@ class _View extends StatelessWidget {
                     visita: v,
                     estadoLabel: 'Incidencia pendiente',
                     codigo: _codigo(v),
-                    onTap: () => context.push('/incidencia', extra: {'id': v.id}),
-                    onMaps: () => _maps(context, v),
-                    onCall: () => _call(context, v),
-                    onMessage: () => _message(context, v),
+                    onTap: () => _openIncidencia(context, v),
+                    onMaps: () => ExternalActions.openMaps(context, _dir(v)),
+                    onCall: () => ExternalActions.call(context, v.telefono),
+                    onMessage: () =>
+                        ExternalActions.sms(context, v.telefono, v.cliente),
                   ),
               ],
             ),

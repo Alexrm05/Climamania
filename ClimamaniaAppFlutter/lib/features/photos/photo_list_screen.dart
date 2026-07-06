@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/app_config.dart';
+import '../../core/media_picker.dart';
+import '../../core/photo_network_image.dart';
 import '../../data/api/api_client.dart';
 import '../../data/repositories/pedido_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 import 'photo_category.dart';
 import 'photo_list_controller.dart';
-
-enum _Source { cameraPhoto, galleryPhoto, galleryVideo }
 
 /// Pantalla de fotos por categoría. Réplica de PhotoListActivity.
 class PhotoListScreen extends StatelessWidget {
@@ -59,36 +58,17 @@ class _PhotoListView extends StatelessWidget {
       ..showSnackBar(SnackBar(content: Text(m)));
   }
 
-  Future<void> _pickAndUpload(BuildContext context, _Source source) async {
+  Future<void> _pickAndUpload(BuildContext context, MediaSource source) async {
     final controller = context.read<PhotoListController>();
-    final picker = ImagePicker();
     try {
-      if (source == _Source.galleryVideo) {
-        final file = await picker.pickVideo(source: ImageSource.gallery);
-        if (file == null) return;
-        final (ok, msg) = await controller.uploadPath(file.path, file.name);
-        if (context.mounted) _msg(context, msg);
-        return;
-      }
-
-      final file = await picker.pickImage(
-        source: source == _Source.cameraPhoto
-            ? ImageSource.camera
-            : ImageSource.gallery,
-      );
-      if (file == null) return;
-
-      // Comprimir + corregir rotación (autoCorrectionAngle por defecto).
-      final compressed = await FlutterImageCompress.compressWithFile(
-        file.path,
-        minWidth: 1600,
-        minHeight: 1600,
-        quality: 85,
-      );
-      final bytes = compressed ?? await file.readAsBytes();
-      final name = 'foto_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final (ok, msg) = await controller.uploadBytes(bytes, name);
+      final media = await pickMedia(source);
+      if (media == null) return;
+      final (_, msg) = media.isVideo
+          ? await controller.uploadPath(media.path!, media.filename)
+          : await controller.uploadBytes(media.bytes!, media.filename);
       if (context.mounted) _msg(context, msg);
+    } on MediaTooLargeException catch (e) {
+      if (context.mounted) _msg(context, e.message);
     } catch (_) {
       if (context.mounted) _msg(context, 'No se pudo procesar el archivo');
     }
@@ -106,7 +86,7 @@ class _PhotoListView extends StatelessWidget {
               title: const Text('Cámara (foto)'),
               onTap: () {
                 Navigator.pop(sheetCtx);
-                _pickAndUpload(context, _Source.cameraPhoto);
+                _pickAndUpload(context, MediaSource.cameraPhoto);
               },
             ),
             ListTile(
@@ -114,7 +94,7 @@ class _PhotoListView extends StatelessWidget {
               title: const Text('Galería (foto)'),
               onTap: () {
                 Navigator.pop(sheetCtx);
-                _pickAndUpload(context, _Source.galleryPhoto);
+                _pickAndUpload(context, MediaSource.galleryPhoto);
               },
             ),
             ListTile(
@@ -122,7 +102,7 @@ class _PhotoListView extends StatelessWidget {
               title: const Text('Galería (vídeo)'),
               onTap: () {
                 Navigator.pop(sheetCtx);
-                _pickAndUpload(context, _Source.galleryVideo);
+                _pickAndUpload(context, MediaSource.galleryVideo);
               },
             ),
           ],
@@ -131,23 +111,20 @@ class _PhotoListView extends StatelessWidget {
     );
   }
 
-  Future<void> _open(BuildContext context, String doc) async {
-    final uri = Uri.parse(AppConfig.fotoUrl(doc));
-    try {
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        if (context.mounted) _msg(context, 'No se pudo abrir el archivo');
-      }
-    } catch (_) {
-      if (context.mounted) _msg(context, 'No se pudo abrir el archivo');
-    }
+  /// Abre el documento/imagen en el WebView interno (como WebViewActivity), con
+  /// la primera URL candidata.
+  void _open(BuildContext context, String doc) {
+    final candidates = AppConfig.buildPhotoCandidates(doc);
+    if (candidates.isEmpty) return;
+    context.push('/webview', extra: {'url': candidates.first});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(title: Text(titulo)),
-      body: Consumer<PhotoListController>(
+    return DetailScaffold(
+      activeIndex: NavBranch.home,
+      onReload: () => context.read<PhotoListController>().load(),
+      child: Consumer<PhotoListController>(
         builder: (context, c, _) {
           return Column(
             children: [
@@ -229,20 +206,13 @@ class _PhotoListView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 200),
-                child: Image.network(
-                  AppConfig.fotoUrl(doc),
+              SizedBox(
+                height: 220,
+                child: PhotoNetworkImage(
+                  candidates: AppConfig.buildPhotoCandidates(doc),
                   fit: BoxFit.contain,
-                  loadingBuilder: (ctx, child, progress) => progress == null
-                      ? child
-                      : const SizedBox(
-                          height: 200,
-                          child: Center(child: CircularProgressIndicator())),
-                  errorBuilder: (ctx, _, _) => const SizedBox(
-                    height: 200,
-                    child: Center(child: Text('No se pudo cargar')),
-                  ),
+                  width: double.infinity,
+                  height: 220,
                 ),
               ),
               Padding(
@@ -281,7 +251,7 @@ class _PhotoListView extends StatelessWidget {
             TextButton(
               onPressed: () => kind == FileKind.video
                   ? context.push('/video',
-                      extra: {'url': AppConfig.fotoUrl(doc)})
+                      extra: {'urls': AppConfig.buildPhotoCandidates(doc)})
                   : _open(context, doc),
               child: Text(kind == FileKind.video ? 'Ver vídeo' : 'Abrir'),
             ),

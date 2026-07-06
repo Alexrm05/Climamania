@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/external_actions.dart';
 import '../../data/models/gestion_item.dart';
 import '../../data/repositories/visita_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 import 'visitas_pendientes_controller.dart';
 import 'widgets/visita_card.dart';
 
@@ -29,47 +31,26 @@ class VisitasPendientesScreen extends StatelessWidget {
 class _VisitasPendientesView extends StatelessWidget {
   const _VisitasPendientesView();
 
-  Future<void> _launch(BuildContext context, Uri uri) async {
-    try {
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No se pudo abrir')));
-        }
-      }
-    } catch (_) {}
-  }
+  String _dir(GestionItem v) => [
+        if (v.direccion.isNotEmpty) v.direccion,
+        if (v.poblacion.isNotEmpty) v.poblacion,
+      ].join(', ');
 
-  void _maps(BuildContext context, GestionItem v) {
-    final dir = [
-      if (v.direccion.isNotEmpty) v.direccion,
-      if (v.poblacion.isNotEmpty) v.poblacion,
-    ].join(', ');
-    if (dir.isEmpty) return;
-    _launch(
-      context,
-      Uri.parse(
-          'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(dir)}'),
-    );
-  }
-
-  void _call(BuildContext context, GestionItem v) {
-    if (v.telefono.isEmpty) return;
-    _launch(context, Uri.parse('tel:${v.telefono}'));
-  }
-
-  void _message(BuildContext context, GestionItem v) {
-    if (v.telefono.isEmpty) return;
-    final body = Uri.encodeComponent('Hola ${v.cliente}, ');
-    _launch(context, Uri.parse('sms:${v.telefono}?body=$body'));
+  void _openVisita(BuildContext context, GestionItem v) {
+    final id = v.id.trim();
+    if (id.isEmpty || id == '0' || id.toLowerCase() == 'null') {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ID de visita no disponible')));
+      return;
+    }
+    context.push('/visita', extra: {'id': id});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(title: const Text('Visitas pendientes')),
-      body: Consumer<VisitasPendientesController>(
+    return DetailScaffold(
+      activeIndex: NavBranch.home,
+      child: Consumer<VisitasPendientesController>(
         builder: (context, c, _) {
           if (c.loading) {
             return const Center(child: CircularProgressIndicator());
@@ -106,11 +87,11 @@ class _VisitasPendientesView extends StatelessWidget {
                   VisitaCard(
                     visita: v,
                     estadoLabel: 'Visita pendiente',
-                    onTap: () =>
-                        context.push('/visita', extra: {'id': v.id}),
-                    onMaps: () => _maps(context, v),
-                    onCall: () => _call(context, v),
-                    onMessage: () => _message(context, v),
+                    onTap: () => _openVisita(context, v),
+                    onMaps: () => ExternalActions.openMaps(context, _dir(v)),
+                    onCall: () => ExternalActions.call(context, v.telefono),
+                    onMessage: () =>
+                        ExternalActions.sms(context, v.telefono, v.cliente),
                   ),
               ],
             ),

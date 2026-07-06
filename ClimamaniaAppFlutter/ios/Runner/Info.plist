@@ -69,6 +69,8 @@
 		<!-- Permisos (cámara/fotos/ubicación se usan en fases posteriores) -->
 		<key>NSCameraUsageDescription</key>
 		<string>ClimaMania necesita la cámara para adjuntar fotos y vídeos de la instalación.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>ClimaMania necesita el micrófono para grabar vídeos de la instalación.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>ClimaMania necesita acceder a tus fotos para adjuntar imágenes y vídeos a la instalación.</string>
 		<key>NSPhotoLibraryAddUsageDescription</key>

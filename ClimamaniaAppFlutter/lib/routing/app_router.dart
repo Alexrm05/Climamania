@@ -5,9 +5,11 @@ import '../features/adicionales/adicionales_screen.dart';
 import '../features/adicionales/presupuesto_detalle_screen.dart';
 import '../features/calendar/calendar_screen.dart';
 import '../features/home/home_screen.dart';
+import '../data/models/gestion_item.dart';
 import '../features/incidencias/incidencia_detalle_screen.dart';
 import '../features/incidencias/incidencia_enviar_screen.dart';
 import '../features/incidencias/incidencias_pendientes_screen.dart';
+import '../features/incidencias/incidencias_previas_screen.dart';
 import '../features/login/login_screen.dart';
 import '../features/install/conforme_screen.dart';
 import '../features/install/finalizar_screen.dart';
@@ -23,6 +25,7 @@ import '../features/visitas/cerrar_gestion_screen.dart';
 import '../features/visitas/visita_detalle_screen.dart';
 import '../features/visitas/visita_enviar_screen.dart';
 import '../features/visitas/visitas_pendientes_screen.dart';
+import '../features/visitas/visitas_previas_screen.dart';
 import '../features/shell/app_shell.dart';
 import '../services/session_service.dart';
 
@@ -192,7 +195,39 @@ GoRouter createRouter(SessionService session) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final e = state.extra is Map ? state.extra as Map : const {};
-          return IncidenciaDetalleScreen(idIncidencia: _visitaIdOr(e['id']));
+          return IncidenciaDetalleScreen(
+            idIncidencia: _visitaIdOr(e['id']),
+            referencia: (e['referencia'] ?? '').toString(),
+          );
+        },
+      ),
+      // Visitas / incidencias previas (histórico por referencia del pedido).
+      GoRoute(
+        path: '/visitas-previas',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final e = state.extra is Map ? state.extra as Map : const {};
+          final items = (e['items'] is List)
+              ? List<GestionItem>.from(e['items'] as List)
+              : <GestionItem>[];
+          return VisitasPreviasScreen(
+            visitas: items,
+            referencia: (e['referencia'] ?? '').toString(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/incidencias-previas',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final e = state.extra is Map ? state.extra as Map : const {};
+          final items = (e['items'] is List)
+              ? List<GestionItem>.from(e['items'] as List)
+              : <GestionItem>[];
+          return IncidenciasPreviasScreen(
+            incidencias: items,
+            referencia: (e['referencia'] ?? '').toString(),
+          );
         },
       ),
       GoRoute(
@@ -202,6 +237,7 @@ GoRouter createRouter(SessionService session) {
           final e = state.extra is Map ? state.extra as Map : const {};
           return IncidenciaEnviarScreen(
             idIncidencia: _visitaIdOr(e['id']),
+            referencia: (e['referencia'] ?? '').toString(),
             cliente: (e['cliente'] ?? '').toString(),
             direccion: (e['direccion'] ?? '').toString(),
             poblacion: (e['poblacion'] ?? '').toString(),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../theme/app_colors.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 
 /// WebView. Réplica de WebViewActivity + content_webview.
 ///
@@ -81,16 +82,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
       ],
     );
     if (!widget.standalone) return body;
-    return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(
-        title: const Text('Web'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: body,
+    return DetailScaffold(
+      activeIndex: NavBranch.web,
+      onReload: () => _controller.reload(),
+      child: body,
     );
   }
 }

@@ -8,6 +8,8 @@ import '../../data/repositories/visita_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 
 /// Gestión de una visita: comentarios, fotos/vídeo, prioridad, finalizar/cancelar.
 /// Réplica de VisitaEnviarActivity.
@@ -72,10 +74,14 @@ class _VisitaEnviarScreenState extends State<VisitaEnviarScreen> {
         ],
       ),
     );
-    if (texto == null || texto.isEmpty || !mounted) return;
+    if (texto == null || !mounted) return;
+    if (texto.isEmpty) {
+      _msg('Debes escribir un comentario');
+      return;
+    }
     setState(() => _busy = true);
     final c = _ctx();
-    final (ok, msg) = await _repo.enviarComentario(
+    final (_, msg) = await _repo.enviarComentario(
       idVisita: widget.idVisita,
       rol: c['rol']!,
       usuario: c['usuario']!,
@@ -126,7 +132,7 @@ class _VisitaEnviarScreenState extends State<VisitaEnviarScreen> {
       if (media == null || !mounted) return;
       setState(() => _busy = true);
       final c = _ctx();
-      final (ok, msg) = media.isVideo
+      final (_, msg) = media.isVideo
           ? await _repo.enviarFotoPath(
               idVisita: widget.idVisita,
               rol: c['rol']!,
@@ -149,6 +155,9 @@ class _VisitaEnviarScreenState extends State<VisitaEnviarScreen> {
             );
       if (mounted) setState(() => _busy = false);
       _msg(msg);
+    } on MediaTooLargeException catch (e) {
+      if (mounted) setState(() => _busy = false);
+      _msg(e.message);
     } catch (_) {
       if (mounted) setState(() => _busy = false);
       _msg('No se pudo procesar el archivo');
@@ -185,21 +194,22 @@ class _VisitaEnviarScreenState extends State<VisitaEnviarScreen> {
   }
 
   Future<void> _cerrar() async {
-    await context.push('/cerrar-gestion', extra: {
+    final r = await context.push('/cerrar-gestion', extra: {
       'tipo': 'visita',
       'id': widget.idVisita,
       'cliente': widget.cliente,
       'direccion': widget.direccion,
       'poblacion': widget.poblacion,
     });
+    // Si la gestión se cerró, volvemos al detalle (que recarga), como Android.
+    if (r == true && mounted) context.pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(title: Text('Gestionar visita #${widget.idVisita}')),
-      body: Stack(
+    return DetailScaffold(
+      activeIndex: NavBranch.home,
+      child: Stack(
         children: [
           ListView(
             padding: const EdgeInsets.all(16),

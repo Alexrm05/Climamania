@@ -2,19 +2,26 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/ui_text.dart';
+import '../../data/models/gestion_item.dart';
 import '../../data/models/pedido.dart';
+import '../../data/repositories/incidencia_repository.dart';
 import '../../data/repositories/pedido_repository.dart';
+import '../../data/repositories/visita_repository.dart';
 import '../../services/session_service.dart';
 
 class PedidoController extends ChangeNotifier {
   final PedidoRepository _repo;
   final SessionService _session;
+  final VisitaRepository _visitaRepo;
+  final IncidenciaRepository _incidenciaRepo;
   final String referencia;
   final String clienteHint;
 
   PedidoController(
     this._repo,
-    this._session, {
+    this._session,
+    this._visitaRepo,
+    this._incidenciaRepo, {
     required this.referencia,
     this.clienteHint = '',
   });
@@ -23,6 +30,11 @@ class PedidoController extends ChangeNotifier {
   String? errorMsg;
   Pedido? pedido;
   bool savingComentario = false;
+
+  // Previas asociadas a la referencia (histórico), como en el detalle Android.
+  List<GestionItem> visitasPrevias = [];
+  List<GestionItem> incidenciasPrevias = [];
+  bool previasCargadas = false;
 
   // Comentarios añadidos en esta sesión (se muestran sin recargar).
   final List<ComentarioInstalador> _extraComentarios = [];
@@ -60,7 +72,73 @@ class PedidoController extends ChangeNotifier {
     }
     loading = false;
     _notify();
+    if (pedido != null) _loadPrevias();
   }
+
+  /// Carga las visitas e incidencias previas asociadas a la referencia, como
+  /// hace PedidoDetailActivity al renderizar el pedido.
+  Future<void> _loadPrevias() async {
+    final rol = _session.rol;
+    final equipo = _session.readEquipo();
+    final usuario = _session.usuarioForRequests;
+    try {
+      final incidencias = await _incidenciaRepo.getPreviasPorReferencia(
+        referencia: referencia,
+        rol: rol,
+        equipo: equipo,
+        usuario: usuario,
+      );
+      final realizadas = await _visitaRepo.getRealizadas(
+        rol: rol,
+        equipo: equipo,
+        usuario: usuario,
+      );
+      incidenciasPrevias = incidencias;
+      visitasPrevias = _filtrarVisitasPrevias(realizadas);
+    } catch (_) {
+      // Silencioso: las previas son informativas.
+    }
+    previasCargadas = true;
+    _notify();
+  }
+
+  /// Filtra las visitas realizadas que corresponden a este pedido. Como Android
+  /// (PedidoDetailActivity: getTelefonosParaBusquedaVisitas + el filtro de
+  /// asociación): exige coincidencia de teléfono MÓVIL (empieza por 6) **y**
+  /// solape de al menos un token de dirección.
+  List<GestionItem> _filtrarVisitasPrevias(List<GestionItem> realizadas) {
+    // Solo móviles del pedido (empiezan por 6), igual que isPreferredVisitPhone.
+    final phones = telefonos
+        .map((p) => p.replaceAll(RegExp(r'\D'), ''))
+        .where((d) => d.startsWith('6'))
+        .toSet();
+    final dirTokens = _tokens(direccion);
+    final out = <GestionItem>[];
+    for (final v in realizadas) {
+      if (v.estadoRaw == '1') continue; // aún pendiente
+      final vPhone = v.telefono.replaceAll(RegExp(r'\D'), '');
+      final phoneMatch = vPhone.isNotEmpty && phones.contains(vPhone);
+      final overlap = _tokenOverlap(_tokens(v.direccion), dirTokens);
+      if (phoneMatch && overlap >= 1) out.add(v);
+    }
+    return out;
+  }
+
+  Set<String> _tokens(String s) {
+    final clean = UiText.sanitizeDbValue(s).toLowerCase();
+    const stop = {
+      'calle', 'c', 'av', 'avda', 'avenida', 'piso', 'pta', 'puerta', 'nº',
+      'num', 'numero', 'bajo', 'esc', 'escalera', 'de', 'la', 'el', 'los',
+      'del', 'y', 's/n',
+    };
+    return clean
+        .split(RegExp(r'[^a-z0-9áéíóúñ]+'))
+        .where((t) => t.length >= 3 && !stop.contains(t))
+        .toSet();
+  }
+
+  int _tokenOverlap(Set<String> a, Set<String> b) =>
+      a.where(b.contains).length;
 
   Future<(bool, String)> addComentario(String texto) async {
     final t = texto.trim();
@@ -105,15 +183,36 @@ class PedidoController extends ChangeNotifier {
   List<String> get telefonos {
     final p = pedido;
     if (p == null) return const [];
-    final raw = <String>[
-      p.entrega?.telefono ?? '',
-      p.facturacion?.telefono ?? '',
-      ..._extractPhones(p.direccionInstalacion),
+    // Entrega → facturación (troceando cada campo). La dirección solo se usa
+    // como fallback si no hubo ningún teléfono, igual que Android.
+    final principales = <String>[
+      ..._extractPhones(p.entrega?.telefono ?? ''),
+      ..._extractPhones(p.facturacion?.telefono ?? ''),
     ];
-    return _dedupePhones(raw.where((e) => e.trim().isNotEmpty).toList());
+    if (principales.isEmpty) {
+      principales.addAll(_extractPhones(p.direccionInstalacion));
+    }
+    return _dedupePhones(principales.where((e) => e.trim().isNotEmpty).toList());
   }
 
   String get telefonoPrincipal => _chooseBestMobile(telefonos);
+
+  /// Etiqueta del teléfono según su prefijo (Móvil/Fijo), como el selector de
+  /// teléfonos de Android.
+  String phoneLabel(String phone) {
+    var d = phone.replaceAll(RegExp(r'\D'), '');
+    if (d.startsWith('34') && d.length > 9) d = d.substring(2);
+    if (d.startsWith('6') || d.startsWith('7')) return 'Móvil';
+    if (d.startsWith('8') || d.startsWith('9')) return 'Fijo';
+    return 'Teléfono';
+  }
+
+  /// Número para WhatsApp: antepone el prefijo 34 a los números de 9 dígitos.
+  String whatsappNumber(String phone) {
+    var d = phone.replaceAll(RegExp(r'\D'), '');
+    if (d.length == 9) d = '34$d';
+    return d;
+  }
 
   String get equipoTexto {
     final p = pedido;
@@ -192,11 +291,13 @@ class PedidoController extends ChangeNotifier {
 
   List<String> _extractPhones(String raw) {
     final text = UiText.sanitizeDbValue(raw);
-    final matches = RegExp(r'\d[\d \t]{7,}').allMatches(text);
+    // Tokeniza en números contiguos (opcional "+"), 9-13 dígitos, como Android.
+    final matches = RegExp(r'\+?\d{9,13}').allMatches(text);
     final out = <String>[];
     for (final m in matches) {
-      final digits = m.group(0)!.replaceAll(RegExp(r'\D'), '');
-      if (digits.length >= 9 && digits.length <= 13) out.add(digits);
+      final tok = m.group(0)!;
+      final digits = tok.replaceAll(RegExp(r'\D'), '');
+      if (digits.length >= 9 && digits.length <= 13) out.add(tok);
     }
     return out;
   }

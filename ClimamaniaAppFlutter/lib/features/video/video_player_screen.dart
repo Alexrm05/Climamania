@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../theme/app_colors.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 
 /// Reproductor de vídeo. Réplica de VideoPlayerActivity + content_video_player:
 /// marco negro, "Cargando...", controles, y fallback a la siguiente URL si una
@@ -73,10 +75,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(title: const Text('Reproductor de vídeo')),
-      body: Padding(
+    return DetailScaffold(
+      activeIndex: NavBranch.home,
+      child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

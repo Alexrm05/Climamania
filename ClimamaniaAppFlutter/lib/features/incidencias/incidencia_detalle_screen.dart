@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/app_config.dart';
+import '../../core/photo_network_image.dart';
 import '../../core/priority.dart';
 import '../../data/models/gestion_item.dart';
 import '../../data/models/visita_detalle.dart';
@@ -11,14 +11,21 @@ import '../../data/repositories/incidencia_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 import '../visitas/widgets/visita_card.dart';
 import 'incidencia_detalle_controller.dart';
 
 /// Detalle de una incidencia. Réplica de IncidenciaDetalleActivity.
 class IncidenciaDetalleScreen extends StatelessWidget {
   final String idIncidencia;
+  final String referencia;
 
-  const IncidenciaDetalleScreen({super.key, required this.idIncidencia});
+  const IncidenciaDetalleScreen({
+    super.key,
+    required this.idIncidencia,
+    this.referencia = '',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +34,7 @@ class IncidenciaDetalleScreen extends StatelessWidget {
         ctx.read<IncidenciaRepository>(),
         ctx.read<SessionService>(),
         idIncidencia,
+        referencia: referencia,
       )..init(),
       child: _View(idIncidencia: idIncidencia),
     );
@@ -37,28 +45,24 @@ class _View extends StatelessWidget {
   final String idIncidencia;
   const _View({required this.idIncidencia});
 
-  /// Vídeos → reproductor interno; resto (imágenes/documentos) → externo.
+  /// Vídeos → reproductor interno con lista de candidatos; imágenes/documentos
+  /// → WebView interno (como WebViewActivity de Android), con candidatos.
   void _openFichero(BuildContext context, Fichero f) {
+    final candidates = AppConfig.buildPhotoCandidates(f.ruta);
+    if (candidates.isEmpty) return;
     if (f.isVideo) {
-      context.push('/video', extra: {'url': AppConfig.fotoUrl(f.ruta)});
+      context.push('/video', extra: {'urls': candidates});
     } else {
-      _open(context, f.ruta);
+      context.push('/webview', extra: {'url': candidates.first});
     }
-  }
-
-  Future<void> _open(BuildContext context, String ruta) async {
-    try {
-      await launchUrl(Uri.parse(AppConfig.fotoUrl(ruta)),
-          mode: LaunchMode.externalApplication);
-    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(title: Text('Incidencia #$idIncidencia')),
-      body: Consumer<IncidenciaDetalleController>(
+    return DetailScaffold(
+      activeIndex: NavBranch.home,
+      onReload: () => context.read<IncidenciaDetalleController>().load(),
+      child: Consumer<IncidenciaDetalleController>(
         builder: (context, c, _) {
           if (c.loading) {
             return const Center(child: CircularProgressIndicator());
@@ -145,6 +149,7 @@ class _View extends StatelessWidget {
               onPressed: () async {
                 await context.push('/incidencia-enviar', extra: {
                   'id': v.id,
+                  'referencia': c.referencia,
                   'cliente': v.cliente,
                   'direccion': v.direccion,
                   'poblacion': v.poblacion,
@@ -279,13 +284,14 @@ class _View extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (f.isImage)
-                Image.network(
-                  AppConfig.fotoUrl(f.ruta),
+                SizedBox(
                   height: 180,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const SizedBox(
-                      height: 60,
-                      child: Center(child: Text('No se pudo cargar'))),
+                  child: PhotoNetworkImage(
+                    candidates: AppConfig.buildPhotoCandidates(f.ruta),
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: 180,
+                  ),
                 ),
               Padding(
                 padding: const EdgeInsets.all(10),

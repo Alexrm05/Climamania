@@ -19,7 +19,7 @@ class IncidenciaRepository {
     return (ok, msg.isEmpty ? (ok ? okMsg : 'No se pudo completar') : msg);
   }
 
-  Future<(bool, List<GestionItem>)> getPendientes({
+  Future<({bool ok, String message, List<GestionItem> items})> getPendientes({
     required String rol,
     required String equipo,
     required String usuario,
@@ -30,7 +30,16 @@ class IncidenciaRepository {
         query: {'rol': rol, 'equipo': equipo, 'usuario': usuario},
         noCache: true,
       );
-      if (json['success'] != true) return (false, <GestionItem>[]);
+      if (json['success'] != true) {
+        final msg = _s(json['message']);
+        return (
+          ok: false,
+          message: msg.isEmpty
+              ? 'No se pudieron cargar las incidencias pendientes'
+              : msg,
+          items: <GestionItem>[],
+        );
+      }
       final list = <GestionItem>[];
       final raw = json['incidencias'];
       if (raw is List) {
@@ -40,9 +49,48 @@ class IncidenciaRepository {
           }
         }
       }
-      return (true, list);
+      return (ok: true, message: '', items: list);
     } catch (_) {
-      return (false, <GestionItem>[]);
+      return (
+        ok: false,
+        message: 'Error de conexión al cargar incidencias pendientes',
+        items: <GestionItem>[],
+      );
+    }
+  }
+
+  /// Incidencias previas asociadas a una referencia de pedido, mostradas en el
+  /// detalle del pedido (`get_incidencias_previas_por_referencia.php`).
+  Future<List<GestionItem>> getPreviasPorReferencia({
+    required String referencia,
+    required String rol,
+    required String equipo,
+    required String usuario,
+  }) async {
+    try {
+      final json = await _api.getJson(
+        AppConfig.getIncidenciasPreviasPorReferencia,
+        query: {
+          'referencia': referencia,
+          'rol': rol,
+          'equipo': equipo,
+          'usuario': usuario,
+        },
+        noCache: true,
+      );
+      if (json['success'] != true) return <GestionItem>[];
+      final list = <GestionItem>[];
+      final raw = json['incidencias'];
+      if (raw is List) {
+        for (final e in raw) {
+          if (e is Map) {
+            list.add(GestionItem.fromIncidencia(Map<String, dynamic>.from(e)));
+          }
+        }
+      }
+      return list;
+    } catch (_) {
+      return <GestionItem>[];
     }
   }
 
@@ -51,6 +99,7 @@ class IncidenciaRepository {
     required String rol,
     required String equipo,
     required String usuario,
+    String referencia = '',
   }) async {
     try {
       final json = await _api.getJson(
@@ -60,11 +109,13 @@ class IncidenciaRepository {
           'rol': rol,
           'equipo': equipo,
           'usuario': usuario,
+          if (referencia.isNotEmpty) 'referencia': referencia,
         },
         noCache: true,
       );
       final ok = json['success'] == true;
-      final raw = json['incidencia'];
+      // Android acepta tanto `incidencia` como `visita` en el detalle.
+      final raw = json['incidencia'] ?? json['visita'];
       if (!ok || raw is! Map) {
         return (ok: false, message: _s(json['message']), detalle: null);
       }
@@ -214,12 +265,15 @@ class IncidenciaRepository {
     String resumen = '',
   }) async {
     try {
-      final json = await _api.postForm(AppConfig.incidenciaCerrar, {
+      // Como Android: `motivo` solo al cancelar; `resumen_actuacion` solo al
+      // finalizar una incidencia.
+      final fields = {
         ..._base(idIncidencia: idIncidencia, rol: rol, usuario: usuario, equipo: equipo, autor: autor),
         'accion': accion,
-        'motivo': motivo,
-        'resumen_actuacion': resumen,
-      });
+        if (accion == 'cancelar') 'motivo': motivo,
+        if (accion == 'finalizar') 'resumen_actuacion': resumen,
+      };
+      final json = await _api.postForm(AppConfig.incidenciaCerrar, fields);
       return _result(json, accion == 'finalizar' ? 'Incidencia finalizada' : 'Incidencia cancelada');
     } catch (_) {
       return (false, 'Error al cerrar la incidencia');

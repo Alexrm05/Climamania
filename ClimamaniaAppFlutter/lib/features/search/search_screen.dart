@@ -6,6 +6,8 @@ import '../../data/repositories/search_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 import 'search_controller.dart';
 
 /// Pantalla de búsqueda (eventos + visitas + incidencias).
@@ -90,16 +92,19 @@ class _SearchViewState extends State<_SearchView> {
           extra: {'ref': r.navRef, 'cliente': r.navCliente});
       return;
     }
-    // El detalle de visita/incidencia llega en fases posteriores.
-    context.push('/proximamente', extra: r.detailTitle);
+    if (r.kind == SearchKind.visita) {
+      context.push('/visita', extra: {'id': r.navId});
+      return;
+    }
+    // Incidencia: pasamos también la referencia (Android la envía al detalle).
+    context.push('/incidencia', extra: {'id': r.navId, 'referencia': r.navRef});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(title: const Text('Buscar')),
-      body: Padding(
+    return DetailScaffold(
+      activeIndex: NavBranch.home,
+      child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

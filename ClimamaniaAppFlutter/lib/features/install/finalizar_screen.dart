@@ -9,6 +9,8 @@ import '../../services/location_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 
 /// Formulario de finalización de la instalación. Réplica de FinalizarInstalacionActivity.
 class FinalizarScreen extends StatefulWidget {
@@ -32,6 +34,7 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
   // Fotos requeridas que faltan.
   List<String> _faltan = [];
   bool _fotosCargadas = false;
+  String _errorFotos = '';
 
   @override
   void initState() {
@@ -52,19 +55,39 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
       final res =
           await context.read<PedidoRepository>().getPedido(widget.referencia);
       if (!mounted) return;
-      final faltan = <String>[];
-      if (res.pedido != null) {
-        final f = res.pedido!.fotografias;
-        if (f.previas.isEmpty) faltan.add('Faltan fotos previas a la instalación');
-        if (f.acabada.isEmpty) faltan.add('Faltan fotos de la instalación acabada');
-        if (f.conforme.isEmpty) faltan.add('Faltan fotos conforme cliente');
+      if (!res.ok) {
+        setState(() {
+          _errorFotos = res.message.isEmpty
+              ? 'No se pudo cargar el pedido'
+              : res.message;
+          _fotosCargadas = true;
+        });
+        return;
       }
+      if (res.pedido == null) {
+        setState(() {
+          _errorFotos = 'Pedido sin datos';
+          _fotosCargadas = true;
+        });
+        return;
+      }
+      final faltan = <String>[];
+      final f = res.pedido!.fotografias;
+      if (f.previas.isEmpty) faltan.add('Faltan fotos previas a la instalación');
+      if (f.acabada.isEmpty) faltan.add('Faltan fotos instalación acabada');
+      if (f.conforme.isEmpty) faltan.add('Faltan fotos conforme cliente');
       setState(() {
         _faltan = faltan;
+        _errorFotos = '';
         _fotosCargadas = true;
       });
     } catch (_) {
-      if (mounted) setState(() => _fotosCargadas = true);
+      if (mounted) {
+        setState(() {
+          _errorFotos = 'Error de conexión al cargar las fotos';
+          _fotosCargadas = true;
+        });
+      }
     }
   }
 
@@ -98,13 +121,20 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
     final install = context.read<InstallRepository>();
     try {
       final loc = await locationService.capture();
+      // Réplica de getTextValue(edit, "0"): vacío → '0', coma → punto.
+      String money(TextEditingController c) {
+        final v = c.text.trim();
+        return (v.isEmpty ? '0' : v).replaceAll(',', '.');
+      }
+
       final payload = {
         'referencia': widget.referencia,
         'usuario': session.displayName(fallback: 'Instalador'),
-        'cobroMetalico': _metalicoCtrl.text.trim().replaceAll(',', '.'),
-        'cobroVisa': _visaCtrl.text.trim().replaceAll(',', '.'),
+        'cobroMetalico': money(_metalicoCtrl),
+        'cobroVisa': money(_visaCtrl),
         'extras': _extras,
-        'satisfaccion': _satisfaccion > 0 ? '$_satisfaccion' : '',
+        // Android envía siempre el entero del rating (0 si no se valoró).
+        'satisfaccion': '$_satisfaccion',
         'observaciones': _obsCtrl.text.trim(),
         'latitud': loc.latParam,
         'longitud': loc.lngParam,
@@ -124,17 +154,20 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(title: const Text('Finalizar instalación')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+    return DetailScaffold(
+      activeIndex: NavBranch.home,
+      onReload: _cargarFotosFaltantes,
+      child: Column(
         children: [
-          Text('Referencia ${widget.referencia}',
-              style: const TextStyle(
-                  fontSize: 13, color: AppColors.textSecondary)),
-          const SizedBox(height: 12),
-          if (_fotosCargadas) _avisoFotos(),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text('Referencia ${widget.referencia}',
+                    style: const TextStyle(
+                        fontSize: 13, color: AppColors.textSecondary)),
+                const SizedBox(height: 12),
+                if (_fotosCargadas) _avisoFotos(),
           _card('Cobro', Column(
             children: [
               _money('Cobro en metálico (€)', _metalicoCtrl),
@@ -170,54 +203,60 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
                 contentPadding: EdgeInsets.symmetric(vertical: 12),
               ),
             ),
-          )),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _submitting ? null : _finalizar,
-                    child: _submitting
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: AppColors.white))
-                        : const Text('Finalizar ahora'),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: OutlinedButton(
-                    onPressed: _submitting ? null : () => context.pop(),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryDark,
-                      side: const BorderSide(color: AppColors.primaryDark),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5)),
-                    ),
-                    child: const Text('Volver'),
-                  ),
-                ),
-              ),
-            ],
+                )),
+              ],
+            ),
           ),
-        ),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _submitting ? null : _finalizar,
+                        child: _submitting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: AppColors.white))
+                            : const Text('Finalizar ahora'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: OutlinedButton(
+                        onPressed: _submitting ? null : () => context.pop(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primaryDark,
+                          side: const BorderSide(color: AppColors.primaryDark),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5)),
+                        ),
+                        child: const Text('Volver'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _avisoFotos() {
-    final completas = _faltan.isEmpty;
+    // Estado de error explícito: si falló la carga, no mostrar verde.
+    final hayError = _errorFotos.isNotEmpty;
+    final completas = !hayError && _faltan.isEmpty;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 4),
@@ -232,17 +271,25 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: completas
-            ? const [
-                Text('Fotografías completas',
-                    style: TextStyle(
-                        color: Color(0xFF2D613A), fontWeight: FontWeight.bold))
+        children: hayError
+            ? [
+                Text(_errorFotos,
+                    style: const TextStyle(
+                        color: Color(0xFF7A2F2F),
+                        fontWeight: FontWeight.bold)),
               ]
-            : [
-                for (final f in _faltan)
-                  Text('• $f',
-                      style: const TextStyle(color: Color(0xFF7A2F2F))),
-              ],
+            : completas
+                ? const [
+                    Text('Fotografías completas',
+                        style: TextStyle(
+                            color: Color(0xFF2D613A),
+                            fontWeight: FontWeight.bold))
+                  ]
+                : [
+                    for (final f in _faltan)
+                      Text('• $f',
+                          style: const TextStyle(color: Color(0xFF7A2F2F))),
+                  ],
       ),
     );
   }

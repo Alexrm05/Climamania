@@ -16,6 +16,11 @@ class GestionItem {
   final String fechaSolicitud;
   final String fechaResolucion;
 
+  /// Valores crudos (sin `_label`) para permitir búsqueda por el valor original
+  /// además de por la etiqueta, igual que Android (busca en ambos campos).
+  final String prioridadRaw;
+  final String estadoRaw;
+
   const GestionItem({
     required this.id,
     required this.referencia,
@@ -30,13 +35,15 @@ class GestionItem {
     required this.estado,
     required this.fechaSolicitud,
     required this.fechaResolucion,
+    this.prioridadRaw = '',
+    this.estadoRaw = '',
   });
 
   factory GestionItem.fromVisita(Map<String, dynamic> j) {
     String s(String k) => UiText.sanitizeDbValue(j[k]?.toString());
     return GestionItem(
       id: s('id_visita'),
-      referencia: '',
+      referencia: _first(s('referencia'), s('pedido')),
       cliente: s('cliente'),
       direccion: s('direccion'),
       poblacion: s('poblacion'),
@@ -48,6 +55,8 @@ class GestionItem {
       estado: _first(s('estado_label'), s('estado')),
       fechaSolicitud: s('fecha_solicitud'),
       fechaResolucion: s('fecha_resolucion'),
+      prioridadRaw: s('prioridad'),
+      estadoRaw: s('estado'),
     );
   }
 
@@ -69,6 +78,8 @@ class GestionItem {
       estado: _first(s('estado_label'), s('estado')),
       fechaSolicitud: s('fecha_solicitud'),
       fechaResolucion: s('fecha_resolucion'),
+      prioridadRaw: s('prioridad'),
+      estadoRaw: s('estado'),
     );
   }
 
@@ -84,6 +95,8 @@ class GestionItem {
         email,
         prioridad,
         estado,
+        prioridadRaw,
+        estadoRaw,
         equipoId,
         solicitante,
         fechaSolicitud,

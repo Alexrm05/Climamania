@@ -354,6 +354,12 @@ class _EventCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                               fontSize: 11, color: Color(0xFF263238))),
+                    if (ev.whatsapp.trim().isNotEmpty)
+                      Text('WhatsApp: ${ev.whatsapp.trim()}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 11, color: Color(0xFF263238))),
                   ],
                 ),
               ),

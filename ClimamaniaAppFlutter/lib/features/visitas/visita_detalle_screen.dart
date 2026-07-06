@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/app_config.dart';
+import '../../core/photo_network_image.dart';
 import '../../core/priority.dart';
 import '../../data/models/gestion_item.dart';
 import '../../data/models/visita_detalle.dart';
@@ -11,6 +11,8 @@ import '../../data/repositories/visita_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 import 'visita_detalle_controller.dart';
 import 'widgets/visita_card.dart';
 
@@ -37,28 +39,24 @@ class _VisitaDetalleView extends StatelessWidget {
   final String idVisita;
   const _VisitaDetalleView({required this.idVisita});
 
-  /// Vídeos → reproductor interno; resto (imágenes/documentos) → externo.
+  /// Vídeos → reproductor interno con lista de candidatos; imágenes/documentos
+  /// → WebView interno (como WebViewActivity), con candidatos.
   void _openFichero(BuildContext context, Fichero f) {
+    final candidates = AppConfig.buildPhotoCandidates(f.ruta);
+    if (candidates.isEmpty) return;
     if (f.isVideo) {
-      context.push('/video', extra: {'url': AppConfig.fotoUrl(f.ruta)});
+      context.push('/video', extra: {'urls': candidates});
     } else {
-      _open(context, f.ruta);
+      context.push('/webview', extra: {'url': candidates.first});
     }
-  }
-
-  Future<void> _open(BuildContext context, String ruta) async {
-    final uri = Uri.parse(AppConfig.fotoUrl(ruta));
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(title: Text('Visita #$idVisita')),
-      body: Consumer<VisitaDetalleController>(
+    return DetailScaffold(
+      activeIndex: NavBranch.home,
+      onReload: () => context.read<VisitaDetalleController>().load(),
+      child: Consumer<VisitaDetalleController>(
         builder: (context, c, _) {
           if (c.loading) {
             return const Center(child: CircularProgressIndicator());
@@ -274,13 +272,14 @@ class _VisitaDetalleView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (f.isImage)
-                Image.network(
-                  AppConfig.fotoUrl(f.ruta),
+                SizedBox(
                   height: 180,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const SizedBox(
-                      height: 60,
-                      child: Center(child: Text('No se pudo cargar'))),
+                  child: PhotoNetworkImage(
+                    candidates: AppConfig.buildPhotoCandidates(f.ruta),
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: 180,
+                  ),
                 ),
               Padding(
                 padding: const EdgeInsets.all(10),

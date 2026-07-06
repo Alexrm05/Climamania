@@ -85,7 +85,7 @@ class InstallRepository {
 
   // --- PDFs / documentación ---
 
-  Future<({bool ok, String message, String pdfUrl, String token})>
+  Future<({bool ok, String message, String pdfUrl, String pdf, String token})>
       generarConformePdf(Map<String, String> payload) async {
     try {
       final json = await _api.postForm(AppConfig.generarConformePdf, payload);
@@ -93,6 +93,9 @@ class InstallRepository {
         ok: json['success'] == true,
         message: _s(json['message']),
         pdfUrl: _s(json['pdf_url']),
+        // Ruta del PDF generado; Android exige que no venga vacía antes de
+        // enviar la documentación (InstallActivity: "Falta el documento…").
+        pdf: _s(json['pdf']),
         token: _s(json['submission_token']).isNotEmpty
             ? _s(json['submission_token'])
             : (payload['submission_token'] ?? ''),
@@ -102,12 +105,13 @@ class InstallRepository {
         ok: false,
         message: 'Error de conexión al generar el PDF',
         pdfUrl: '',
+        pdf: '',
         token: payload['submission_token'] ?? '',
       );
     }
   }
 
-  Future<({bool ok, String message, String pdfUrl})> generarBoePdf(
+  Future<({bool ok, String message, String pdfUrl, String pdf})> generarBoePdf(
       Map<String, String> payload) async {
     try {
       final json = await _api.postForm(AppConfig.generarBoePdf, payload);
@@ -115,13 +119,20 @@ class InstallRepository {
         ok: json['success'] == true,
         message: _s(json['message']),
         pdfUrl: _s(json['pdf_url']),
+        pdf: _s(json['pdf']),
       );
     } catch (_) {
-      return (ok: false, message: 'Error al generar el PDF BOE', pdfUrl: '');
+      return (
+        ok: false,
+        message: 'Error al generar el PDF BOE',
+        pdfUrl: '',
+        pdf: '',
+      );
     }
   }
 
-  Future<(bool, String)> enviarDocumentacion({
+  Future<({bool ok, String message, String destinatarioCliente})>
+      enviarDocumentacion({
     required String referencia,
     required String token,
     required bool requiereBoe,
@@ -134,9 +145,18 @@ class InstallRepository {
       });
       final ok = json['success'] == true;
       final msg = _s(json['message']);
-      return (ok, msg.isEmpty ? (ok ? 'Documentación enviada' : 'No se pudo enviar') : msg);
+      return (
+        ok: ok,
+        message:
+            msg.isEmpty ? (ok ? 'Documentación enviada' : 'No se pudo enviar') : msg,
+        destinatarioCliente: _s(json['destinatario_cliente']),
+      );
     } catch (_) {
-      return (false, 'Error al enviar la documentación');
+      return (
+        ok: false,
+        message: 'Error al enviar la documentación',
+        destinatarioCliente: '',
+      );
     }
   }
 

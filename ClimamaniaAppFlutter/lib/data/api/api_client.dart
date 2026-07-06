@@ -2,6 +2,42 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../core/app_config.dart';
 
+/// Content-Type explícito por extensión del fichero, igual que Android
+/// (que escribe `image/jpeg`, `video/mp4`, etc. en la parte multipart). Sin
+/// esto dio envía `application/octet-stream` y el backend puede rechazarlo.
+DioMediaType? mediaTypeForFilename(String filename) {
+  final dot = filename.lastIndexOf('.');
+  if (dot < 0) return null;
+  switch (filename.substring(dot + 1).toLowerCase()) {
+    case 'jpg':
+    case 'jpeg':
+      return DioMediaType('image', 'jpeg');
+    case 'png':
+      return DioMediaType('image', 'png');
+    case 'gif':
+      return DioMediaType('image', 'gif');
+    case 'webp':
+      return DioMediaType('image', 'webp');
+    case 'mp4':
+      return DioMediaType('video', 'mp4');
+    case 'mov':
+      return DioMediaType('video', 'quicktime');
+    case 'm4v':
+      return DioMediaType('video', 'x-m4v');
+    case '3gp':
+      return DioMediaType('video', '3gpp');
+    case 'webm':
+      return DioMediaType('video', 'webm');
+    case 'avi':
+      return DioMediaType('video', 'x-msvideo');
+    case 'mkv':
+      return DioMediaType('video', 'x-matroska');
+    case 'pdf':
+      return DioMediaType('application', 'pdf');
+  }
+  return null;
+}
+
 /// Envoltorio sobre dio. Inyecta la `api_key` en cada petición, expone
 /// `postForm` (form-urlencoded) y `getJson`, y parsea la respuesta de forma
 /// tolerante (rescatando JSON embebido en HTML, igual que la app Android).
@@ -12,7 +48,7 @@ class ApiClient {
       : _dio = dio ??
             Dio(BaseOptions(
               baseUrl: AppConfig.baseUrl,
-              connectTimeout: const Duration(seconds: 20),
+              connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 30),
               // Recibimos texto plano y parseamos nosotros (tolerante).
               responseType: ResponseType.plain,
@@ -64,7 +100,11 @@ class ApiClient {
     final form = FormData.fromMap({
       ...fields,
       'api_key': AppConfig.apiKey,
-      fileField: await MultipartFile.fromFile(filePath, filename: filename),
+      fileField: await MultipartFile.fromFile(
+        filePath,
+        filename: filename,
+        contentType: mediaTypeForFilename(filename),
+      ),
     });
     final resp = await _dio.post(
       path,
@@ -90,7 +130,11 @@ class ApiClient {
     final form = FormData.fromMap({
       ...fields,
       'api_key': AppConfig.apiKey,
-      fileField: MultipartFile.fromBytes(bytes, filename: filename),
+      fileField: MultipartFile.fromBytes(
+        bytes,
+        filename: filename,
+        contentType: mediaTypeForFilename(filename),
+      ),
     });
     final resp = await _dio.post(
       path,

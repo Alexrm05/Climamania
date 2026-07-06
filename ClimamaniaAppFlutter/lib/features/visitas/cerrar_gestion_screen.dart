@@ -7,6 +7,8 @@ import '../../data/repositories/visita_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../shell/detail_scaffold.dart';
+import '../shell/nav_destinations.dart';
 
 /// Finalizar o cancelar una visita/incidencia. Réplica de CerrarGestionActivity.
 class CerrarGestionScreen extends StatefulWidget {
@@ -97,15 +99,15 @@ class _CerrarGestionScreenState extends State<CerrarGestionScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     _msg(res.$2);
-    if (res.$1) context.pop();
+    // Devolvemos `true` para que "Gestionar" vuelva al detalle (que recarga).
+    if (res.$1) context.pop(true);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(title: Text('Finalizar $_caso')),
-      body: Stack(
+    return DetailScaffold(
+      activeIndex: NavBranch.home,
+      child: Stack(
         children: [
           ListView(
             padding: const EdgeInsets.all(16),

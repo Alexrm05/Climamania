@@ -5,8 +5,13 @@ import '../refresh_signal.dart';
 
 /// Barra superior blanca (80dp) del shell: hamburguesa + logo centrado +
 /// botón de recarga. Réplica de la cabecera de `activity_base.xml`.
+///
+/// [onReload] permite que las pantallas de detalle (fuera de las ramas del
+/// shell) recarguen su propio contenido; si es null se dispara la señal global.
 class AppTopBar extends StatelessWidget {
-  const AppTopBar({super.key});
+  final VoidCallback? onReload;
+
+  const AppTopBar({super.key, this.onReload});
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +54,7 @@ class AppTopBar extends StatelessWidget {
                   icon: const Icon(Icons.sync, color: AppColors.iconHeader),
                   iconSize: 28,
                   tooltip: 'Recargar',
-                  onPressed: () => context.read<RefreshSignal>().fire(),
+                  onPressed: onReload ?? () => context.read<RefreshSignal>().fire(),
                 ),
               ),
             ),
