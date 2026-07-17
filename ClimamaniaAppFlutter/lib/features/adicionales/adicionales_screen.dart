@@ -443,6 +443,17 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
             _field('Teléfono', _telefonoCtrl, keyboard: TextInputType.phone),
           ],
         )),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: OutlinedButton.icon(
+            onPressed: _guardando ? null : _limpiarFormulario,
+            style: AppDecorations.redButton,
+            icon: const Icon(Icons.delete_sweep_outlined, size: 20),
+            label: const Text('Limpiar formulario'),
+          ),
+        ),
         _card('Catálogo', Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -520,17 +531,6 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: AppColors.white))
                 : const Text('Aceptar y guardar presupuesto'),
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: OutlinedButton.icon(
-            onPressed: _guardando ? null : _limpiarFormulario,
-            style: AppDecorations.redButton,
-            icon: const Icon(Icons.delete_sweep_outlined, size: 20),
-            label: const Text('Limpiar formulario'),
           ),
         ),
       ],
