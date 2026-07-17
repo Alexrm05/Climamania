@@ -6,6 +6,7 @@ import '../../data/models/evento.dart';
 import '../../data/repositories/home_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../shell/refresh_signal.dart';
@@ -355,6 +356,7 @@ class _CalendarViewState extends State<_CalendarView> {
             ),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
+              style: TextButton.styleFrom(foregroundColor: AppColors.errorFg),
               child: const Text('Cancelar'),
             ),
             ElevatedButton(
@@ -365,6 +367,7 @@ class _CalendarViewState extends State<_CalendarView> {
                 c.setEstado(c.filtroEstado); // fuerza notify/redibujo
                 Navigator.of(ctx).pop();
               },
+              style: AppDecorations.greenButton,
               child: const Text('Aplicar'),
             ),
           ],

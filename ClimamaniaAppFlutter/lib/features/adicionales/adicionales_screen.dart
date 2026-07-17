@@ -283,6 +283,45 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
     });
   }
 
+  /// Vacía TODO el formulario (datos del cliente incluidos), con confirmación.
+  Future<void> _limpiarFormulario() async {
+    final vacio = _lineas.isEmpty &&
+        _sig.isEmpty &&
+        _refCtrl.text.isEmpty &&
+        _nombreCtrl.text.isEmpty &&
+        _emailCtrl.text.isEmpty &&
+        _telefonoCtrl.text.isEmpty;
+    if (vacio) return;
+    FocusScope.of(context).unfocus();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Limpiar formulario'),
+        content: const Text(
+            'Se borrarán los datos del cliente, las líneas y la firma. '
+            '¿Quieres continuar?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar')),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.errorFg,
+                  foregroundColor: AppColors.white),
+              child: const Text('Limpiar')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    _refCtrl.clear();
+    _nombreCtrl.clear();
+    _emailCtrl.clear();
+    _telefonoCtrl.clear();
+    _resetNuevo();
+    _msg('Formulario vaciado');
+  }
+
   // ---------- Buscar ----------
 
   void _onBuscarChanged(String q) {
@@ -384,8 +423,7 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
               height: 46,
               child: ElevatedButton.icon(
                 onPressed: _cargandoRef ? null : _cargarReferencia,
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.infoFg),
+                style: AppDecorations.orangeButtonStyle,
                 icon: _cargandoRef
                     ? const SizedBox(
                         width: 18,
@@ -474,7 +512,7 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
           height: 50,
           child: ElevatedButton(
             onPressed: _guardando ? null : _guardar,
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.confirm),
+            style: AppDecorations.greenButton,
             child: _guardando
                 ? const SizedBox(
                     width: 18,
@@ -482,6 +520,17 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: AppColors.white))
                 : const Text('Aceptar y guardar presupuesto'),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: OutlinedButton.icon(
+            onPressed: _guardando ? null : _limpiarFormulario,
+            style: AppDecorations.redButton,
+            icon: const Icon(Icons.delete_sweep_outlined, size: 20),
+            label: const Text('Limpiar formulario'),
           ),
         ),
       ],

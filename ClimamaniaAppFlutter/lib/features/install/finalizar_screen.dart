@@ -86,10 +86,11 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
+              style: TextButton.styleFrom(foregroundColor: AppColors.errorFg),
               child: const Text('Cancelar')),
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.confirm),
+              style: AppDecorations.greenButton,
               child: const Text('Finalizar')),
         ],
       ),
@@ -201,12 +202,9 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
                   height: 52,
                   child: OutlinedButton(
                     onPressed: _submitting ? null : () => context.pop(),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.textSecondary,
-                      side: const BorderSide(color: AppColors.borderStrong),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: AppRadius.brPill),
-                      padding: const EdgeInsets.symmetric(horizontal: 22),
+                    style: AppDecorations.redButton.copyWith(
+                      padding: const WidgetStatePropertyAll(
+                          EdgeInsets.symmetric(horizontal: 22)),
                     ),
                     child: const Text('Volver'),
                   ),
@@ -217,10 +215,7 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
                     height: 52,
                     child: ElevatedButton.icon(
                       onPressed: _submitting ? null : _finalizar,
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.confirm,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: AppRadius.brPill)),
+                      style: AppDecorations.greenButton,
                       icon: _submitting
                           ? const SizedBox(
                               width: 18,

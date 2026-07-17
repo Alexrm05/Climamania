@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 
@@ -97,12 +98,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               height: 52,
               child: OutlinedButton(
                 onPressed: () => context.pop(),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
-                  side: const BorderSide(color: AppColors.borderStrong),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.brPill),
-                ),
+                style: AppDecorations.redButton,
                 child: const Text('Volver'),
               ),
             ),

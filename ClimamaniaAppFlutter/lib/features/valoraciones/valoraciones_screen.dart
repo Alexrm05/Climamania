@@ -121,8 +121,7 @@ class ValoracionesScreen extends StatelessWidget {
             height: 52,
             child: OutlinedButton(
               onPressed: () => context.go('/home'),
-              style: OutlinedButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: AppRadius.brPill)),
+              style: AppDecorations.redButton,
               child: const Text('Volver al inicio'),
             ),
           ),

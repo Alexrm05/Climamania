@@ -40,10 +40,11 @@ class AppShell extends StatelessWidget {
         body: SafeArea(
           child: Column(
             children: [
-              AppTopBar(
-                canGoBack: canGoBack,
-                onBack: () => _goBackTab(context),
-              ),
+              // Las 5 pestañas principales (Calendario, Adicionales, Inicio,
+              // Valoraciones, Web) son de nivel superior: siempre el menú, sin
+              // flecha de "volver". (El gesto atrás del sistema sí vuelve a la
+              // pestaña anterior vía PopScope.)
+              const AppTopBar(canGoBack: false),
               Expanded(child: navigationShell),
               BottomNavBar(navigationShell: navigationShell),
             ],

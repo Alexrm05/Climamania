@@ -255,37 +255,21 @@ class _PedidoViewState extends State<_PedidoView> {
               Container(
                   height: 1, width: double.infinity, color: AppColors.border),
               const SizedBox(height: AppSpacing.md),
-              // Dirección + acciones (mismo lenguaje que la tarjeta de Inicio)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                        color: AppColors.surfaceWarm,
-                        borderRadius: AppRadius.brMd),
-                    child: const Center(
-                        child: Icon(Icons.place,
-                            size: 20, color: AppColors.textSecondary)),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Text(
-                      c.direccion.isNotEmpty
-                          ? c.direccion
-                          : 'Dirección no disponible',
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: c.direccion.isNotEmpty
-                          ? t.titleSmall?.copyWith(color: AppColors.textPrimary)
-                          : t.bodyMedium?.copyWith(
-                              color: AppColors.textMuted,
-                              fontStyle: FontStyle.italic),
-                    ),
-                  ),
-                ],
+              // Dirección y teléfono, cada uno en su propia línea.
+              _contactRow(
+                context,
+                Icons.place,
+                c.direccion.isNotEmpty
+                    ? c.direccion
+                    : 'Dirección no disponible',
+                available: c.direccion.isNotEmpty,
+                maxLines: 3,
               ),
+              if (c.telefonoPrincipal.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                _contactRow(context, Icons.call, c.telefonoPrincipal,
+                    available: true),
+              ],
               const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
@@ -309,6 +293,37 @@ class _PedidoViewState extends State<_PedidoView> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _contactRow(BuildContext context, IconData icon, String text,
+      {required bool available, int maxLines = 2}) {
+    final t = Theme.of(context).textTheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+              color: AppColors.surfaceWarm, borderRadius: AppRadius.brMd),
+          child: Center(
+              child: Icon(icon, size: 20, color: AppColors.textSecondary)),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: maxLines,
+            overflow: TextOverflow.ellipsis,
+            style: available
+                ? t.titleSmall?.copyWith(color: AppColors.textPrimary)
+                : t.bodyMedium?.copyWith(
+                    color: AppColors.textMuted,
+                    fontStyle: FontStyle.italic),
+          ),
+        ),
+      ],
     );
   }
 
@@ -627,7 +642,7 @@ class _PedidoViewState extends State<_PedidoView> {
           child: ElevatedButton(
             onPressed:
                 c.savingComentario ? null : () => _guardarComentario(c),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.confirm),
+            style: AppDecorations.greenButton,
             child: c.savingComentario
                 ? const SizedBox(
                     width: 18,
@@ -694,12 +709,9 @@ class _PedidoViewState extends State<_PedidoView> {
                 height: 52,
                 child: OutlinedButton(
                   onPressed: () => context.pop(),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    side: const BorderSide(color: AppColors.borderStrong),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.brPill),
-                    padding: const EdgeInsets.symmetric(horizontal: 22),
+                  style: AppDecorations.redButton.copyWith(
+                    padding: const WidgetStatePropertyAll(
+                        EdgeInsets.symmetric(horizontal: 22)),
                   ),
                   child: const Text('Volver'),
                 ),
@@ -716,10 +728,7 @@ class _PedidoViewState extends State<_PedidoView> {
                         'cliente': c.cliente,
                       });
                     },
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: AppRadius.brPill),
-                    ),
+                    style: AppDecorations.greenButton,
                     icon: const Icon(Icons.handyman_outlined, size: 20),
                     label: const Text('Realizar instalación'),
                   ),

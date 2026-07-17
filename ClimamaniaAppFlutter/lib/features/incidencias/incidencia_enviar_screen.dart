@@ -8,6 +8,7 @@ import '../../core/widgets/busy_overlay.dart';
 import '../../data/repositories/incidencia_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_decorations.dart';
 import '../visitas/widgets/gestion_enviar_body.dart';
 
 /// Gestión de una incidencia. Réplica de IncidenciaEnviarActivity.
@@ -65,10 +66,12 @@ class _IncidenciaEnviarScreenState extends State<IncidenciaEnviarScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
+              style: TextButton.styleFrom(
+                  foregroundColor: AppColors.errorFg),
               child: const Text('Cancelar')),
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.confirm),
+              style: AppDecorations.greenButton,
               child: const Text('Enviar')),
         ],
       ),

@@ -58,6 +58,32 @@ class AppDecorations {
     );
   }
 
+  // --- Estilos de botón por semántica (verde=confirmar, rojo=cancelar/volver,
+  //     naranja=buscar/cargar). Píldora, para reusar en toda la app. ---
+
+  /// Confirmar / continuar / guardar / finalizar / aceptar (verde sólido).
+  static final ButtonStyle greenButton = ElevatedButton.styleFrom(
+    backgroundColor: AppColors.confirm,
+    foregroundColor: AppColors.white,
+    shape: RoundedRectangleBorder(borderRadius: AppRadius.brPill),
+  );
+
+  /// Cancelar / volver atrás (rojo con tinte, estética de la tarjeta de
+  /// Incidencias de la home). Se usa con [OutlinedButton].
+  static final ButtonStyle redButton = OutlinedButton.styleFrom(
+    backgroundColor: AppColors.errorTint,
+    foregroundColor: AppColors.errorFg,
+    side: BorderSide(color: AppColors.errorFg.withValues(alpha: 0.35)),
+    shape: RoundedRectangleBorder(borderRadius: AppRadius.brPill),
+  );
+
+  /// Buscar / cargar datos (naranja de marca, sólido).
+  static final ButtonStyle orangeButtonStyle = ElevatedButton.styleFrom(
+    backgroundColor: AppColors.primary,
+    foregroundColor: AppColors.white,
+    shape: RoundedRectangleBorder(borderRadius: AppRadius.brPill),
+  );
+
   /// Hero: fondo plano cálido (sin degradado), radio lg, borde sutil.
   static BoxDecoration detailHero = BoxDecoration(
     color: AppColors.surfaceWarm,

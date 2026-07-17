@@ -94,10 +94,12 @@ class _InstallScreenState extends State<InstallScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
+              style: TextButton.styleFrom(
+                  foregroundColor: AppColors.errorFg),
               child: const Text('Cancelar')),
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.confirm),
+              style: AppDecorations.greenButton,
               child: const Text('Guardar')),
         ],
       ),
@@ -178,10 +180,7 @@ class _InstallScreenState extends State<InstallScreen> {
             height: 52,
             child: ElevatedButton.icon(
               onPressed: _finalizar,
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.confirm,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.brPill)),
+              style: AppDecorations.greenButton,
               icon: const Icon(Icons.check_circle_outline),
               label: const Text('Finalizar instalación'),
             ),
@@ -271,10 +270,7 @@ class _InstallScreenState extends State<InstallScreen> {
             height: 44,
             child: ElevatedButton(
               onPressed: _guardarNota,
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.confirm,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.brPill)),
+              style: AppDecorations.greenButton,
               child: const Text('Guardar comentario'),
             ),
           ),

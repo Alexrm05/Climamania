@@ -64,6 +64,8 @@ Future<void> showEventGroupDialog(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () => Navigator.of(ctx).pop(),
+                  style: TextButton.styleFrom(
+                      foregroundColor: AppColors.errorFg),
                   child: const Text('Cerrar'),
                 ),
               ),

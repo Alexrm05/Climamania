@@ -389,9 +389,16 @@ class PedidoController extends ChangeNotifier {
           l.replaceAll(RegExp(r'[\d\s]'), '').isEmpty) {
         continue; // línea que es básicamente un teléfono
       }
-      keep.add(l);
+      // Teléfono pegado al final de la línea, incluso sin separador
+      // (p. ej. "...BarcelonaTel. 622025625"). Se quita la etiqueta + número.
+      final stripped = l.replaceFirst(
+          RegExp(
+              r'\s*(tel[eé]fonos?|telf|tfno|tlf|whats?app|wsp|tel)\.?\s*:?\s*[\d\s.\-]{9,}$',
+              caseSensitive: false),
+          '');
+      keep.add(stripped.trim());
     }
-    return keep.join('\n');
+    return keep.where((e) => e.isNotEmpty).join('\n');
   }
 
   List<String> _extractPhones(String raw) {

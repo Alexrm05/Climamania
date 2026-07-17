@@ -93,6 +93,9 @@ class _PresupuestoDetalleScreenState extends State<PresupuestoDetalleScreen> {
               child: const Text('No')),
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.errorFg,
+                  foregroundColor: AppColors.white),
               child: const Text('Cancelar presupuesto')),
         ],
       ),
@@ -327,14 +330,7 @@ class _PresupuestoDetalleScreenState extends State<PresupuestoDetalleScreen> {
                     height: 50,
                     child: OutlinedButton(
                       onPressed: _busy ? null : _cancelar,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.errorFg,
-                        side: BorderSide(
-                            color:
-                                AppColors.errorFg.withValues(alpha: 0.55)),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: AppRadius.brPill),
-                      ),
+                      style: AppDecorations.redButton,
                       child: const Text('Cancelar'),
                     ),
                   ),
@@ -344,11 +340,9 @@ class _PresupuestoDetalleScreenState extends State<PresupuestoDetalleScreen> {
               Expanded(
                 child: SizedBox(
                   height: 50,
-                  child: ElevatedButton(
+                  child: OutlinedButton(
                     onPressed: () => context.pop(),
-                    style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: AppRadius.brPill)),
+                    style: AppDecorations.redButton,
                     child: const Text('Volver'),
                   ),
                 ),
