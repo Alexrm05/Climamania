@@ -8,18 +8,25 @@ class Prioridad {
 
   static const opciones = ['Alta', 'Media', 'Baja'];
 
+  /// Normaliza la prioridad. Usa igualdad exacta (no `contains`, que producía
+  /// falsos positivos como "anormal" → "normal" → Media). Los valores numéricos
+  /// se mapean 3+/2/≤1. Un valor desconocido se muestra tal cual, igual que
+  /// `parsePrioridad` en Android. (Fix traído de la rama main del Jul-6.)
   static String parse(String? raw) {
     final clean = UiText.sanitizeDbValue(raw);
     if (clean.isEmpty) return 'Sin prioridad';
-    final lower = clean.toLowerCase();
-    if (lower.contains('alta') || lower.contains('high') || lower.contains('urgente')) {
-      return 'Alta';
-    }
-    if (lower.contains('media') || lower.contains('medio') || lower.contains('normal')) {
-      return 'Media';
-    }
-    if (lower.contains('baja') || lower.contains('low')) {
-      return 'Baja';
+    switch (clean.toLowerCase()) {
+      case 'alta':
+      case 'high':
+      case 'urgente':
+        return 'Alta';
+      case 'media':
+      case 'medio':
+      case 'normal':
+        return 'Media';
+      case 'baja':
+      case 'low':
+        return 'Baja';
     }
     final n = int.tryParse(clean);
     if (n != null) {
@@ -27,7 +34,7 @@ class Prioridad {
       if (n == 2) return 'Media';
       return 'Baja';
     }
-    return 'Sin prioridad';
+    return clean; // literal desconocido, preservado
   }
 
   static Color bg(String label) {
