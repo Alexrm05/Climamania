@@ -67,6 +67,55 @@ class PhotoListController extends ChangeNotifier {
 
   String get _usuario => _session.displayName(fallback: 'Instalador');
 
+  // Fotos que se están eliminando (para mostrar spinner).
+  final Set<String> deletingDocs = {};
+
+  String _sanit(String s) => s.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '');
+
+  bool get _esAdmin {
+    final r = _session.rol.trim().toLowerCase();
+    return r == 'adminclm' || r == 'admin' || r == 'administrador';
+  }
+
+  /// Usuario que subió la foto, extraído del nombre del fichero:
+  /// {referencia}-{clave}-{YYYYMMDDHHMMSS}-{usuario}.ext
+  String _uploaderDe(String doc) {
+    final name = doc.split('/').last;
+    final m = RegExp(r'-(\d{14})-(.+)\.[^.]+$').firstMatch(name);
+    return m != null ? m.group(2)! : '';
+  }
+
+  /// El instalador solo puede eliminar sus propias fotos; el admin, todas.
+  bool puedeEliminar(String doc) {
+    if (_esAdmin) return true;
+    final uploader = _uploaderDe(doc);
+    return uploader.isNotEmpty &&
+        _sanit(uploader).toLowerCase() == _sanit(_usuario).toLowerCase();
+  }
+
+  /// Elimina una foto (solo si el usuario tiene permiso).
+  Future<(bool, String)> eliminarFoto(String doc) async {
+    deletingDocs.add(doc);
+    _notify();
+    try {
+      final json = await _api.postForm(AppConfig.eliminarFoto, {
+        'doc': doc,
+        'usuario': _usuario,
+        'rol': _session.rol,
+      });
+      final ok = json['success'] == true;
+      final msg = UiText.sanitizeDbValue(json['message']?.toString());
+      if (ok) fotos = List<String>.from(fotos)..remove(doc);
+      deletingDocs.remove(doc);
+      _notify();
+      return (ok, ok ? 'Foto eliminada' : (msg.isEmpty ? 'No se pudo eliminar' : msg));
+    } catch (_) {
+      deletingDocs.remove(doc);
+      _notify();
+      return (false, 'Error de conexión al eliminar la foto');
+    }
+  }
+
   Future<(bool, String)> uploadBytes(List<int> bytes, String filename) =>
       _doUpload(() => _api.uploadBytes(
             AppConfig.uploadFoto,

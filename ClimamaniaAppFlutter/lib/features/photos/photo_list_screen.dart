@@ -3,14 +3,16 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/app_config.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../data/api/api_client.dart';
 import '../../data/repositories/pedido_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
 import 'photo_category.dart';
 import 'photo_list_controller.dart';
 
@@ -131,15 +133,10 @@ class _PhotoListView extends StatelessWidget {
     );
   }
 
-  Future<void> _open(BuildContext context, String doc) async {
-    final uri = Uri.parse(AppConfig.fotoUrl(doc));
-    try {
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        if (context.mounted) _msg(context, 'No se pudo abrir el archivo');
-      }
-    } catch (_) {
-      if (context.mounted) _msg(context, 'No se pudo abrir el archivo');
-    }
+  // Abre el fichero (imagen/PDF) dentro de la app con el WebView, más fiable
+  // que lanzar Safari externo.
+  void _open(BuildContext context, String doc) {
+    context.push('/webview', extra: {'url': AppConfig.fotoUrl(doc)});
   }
 
   @override
@@ -161,26 +158,44 @@ class _PhotoListView extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('Referencia $referencia',
-                      style: const TextStyle(
-                          color: AppColors.textSecondary, fontSize: 13)),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: AppDecorations.chipLight,
+                    child: Text('Nº $referencia',
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelMedium
+                            ?.copyWith(color: AppColors.textSecondary)),
+                  ),
                 ),
               ),
               Expanded(child: _list(context, c)),
               if (c.canUpload)
-                SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton.icon(
-                        onPressed: c.uploading
-                            ? null
-                            : () => _showUploadOptions(context),
-                        icon: const Icon(Icons.upload),
-                        label: const Text('Subir foto o vídeo'),
+                Container(
+                  decoration: const BoxDecoration(
+                    color: AppColors.surface,
+                    border:
+                        Border(top: BorderSide(color: AppColors.border)),
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.md,
+                          AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton.icon(
+                          onPressed: c.uploading
+                              ? null
+                              : () => _showUploadOptions(context),
+                          style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: AppRadius.brPill)),
+                          icon: const Icon(Icons.add_a_photo_outlined),
+                          label: const Text('Subir foto o vídeo'),
+                        ),
                       ),
                     ),
                   ),
@@ -197,11 +212,15 @@ class _PhotoListView extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
     if (c.fotos.isEmpty) {
-      return Center(
-        child: Text(
-          c.errorMsg ?? 'No hay archivos disponibles.',
-          style: const TextStyle(color: AppColors.textSecondary),
-        ),
+      final hasError = c.errorMsg != null;
+      return EmptyState(
+        icon: hasError
+            ? Icons.cloud_off_outlined
+            : Icons.photo_library_outlined,
+        title: hasError ? c.errorMsg! : 'No hay archivos todavía',
+        subtitle: c.canUpload
+            ? 'Usa el botón de abajo para subir fotos o vídeos.'
+            : null,
       );
     }
     return ListView.builder(
@@ -211,14 +230,56 @@ class _PhotoListView extends StatelessWidget {
         final doc = c.fotos[i];
         final kind = fileKindOf(doc, c.categoria);
         if (kind == FileKind.image) {
-          return _imageCard(context, doc);
+          return _imageCard(context, c, doc);
         }
-        return _fileRow(context, doc, kind);
+        return _fileRow(context, c, doc, kind);
       },
     );
   }
 
-  Widget _imageCard(BuildContext context, String doc) {
+  Future<void> _eliminarFoto(
+      BuildContext context, PhotoListController c, String doc) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar foto'),
+        content: const Text('¿Seguro que quieres eliminar esta foto?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.logoutRed),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    final (ok, msg) = await c.eliminarFoto(doc);
+    if (context.mounted) _msg(context, msg);
+  }
+
+  Widget _deleteButton(BuildContext context, PhotoListController c, String doc) {
+    if (!c.puedeEliminar(doc)) return const SizedBox.shrink();
+    if (c.deletingDocs.contains(doc)) {
+      return const Padding(
+        padding: EdgeInsets.all(12),
+        child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+    return IconButton(
+      icon: const Icon(Icons.delete_outline, color: AppColors.logoutRed),
+      tooltip: 'Eliminar foto',
+      onPressed: () => _eliminarFoto(context, c, doc),
+    );
+  }
+
+  Widget _imageCard(BuildContext context, PhotoListController c, String doc) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: GestureDetector(
@@ -245,11 +306,18 @@ class _PhotoListView extends StatelessWidget {
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(fileNameOf(doc),
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(fileNameOf(doc),
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.textSecondary)),
+                    ),
+                  ),
+                  _deleteButton(context, c, doc),
+                ],
               ),
             ],
           ),
@@ -258,7 +326,8 @@ class _PhotoListView extends StatelessWidget {
     );
   }
 
-  Widget _fileRow(BuildContext context, String doc, FileKind kind) {
+  Widget _fileRow(
+      BuildContext context, PhotoListController c, String doc, FileKind kind) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Container(
@@ -285,6 +354,7 @@ class _PhotoListView extends StatelessWidget {
                   : _open(context, doc),
               child: Text(kind == FileKind.video ? 'Ver vídeo' : 'Abrir'),
             ),
+            _deleteButton(context, c, doc),
           ],
         ),
       ),

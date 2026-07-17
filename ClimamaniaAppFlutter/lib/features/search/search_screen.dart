@@ -90,14 +90,20 @@ class _SearchViewState extends State<_SearchView> {
           extra: {'ref': r.navRef, 'cliente': r.navCliente});
       return;
     }
-    // El detalle de visita/incidencia llega en fases posteriores.
-    context.push('/proximamente', extra: r.detailTitle);
+    if (r.kind == SearchKind.visita) {
+      context.push('/visita', extra: {'id': r.navId});
+      return;
+    }
+    if (r.kind == SearchKind.incidencia) {
+      context.push('/incidencia', extra: {'id': r.navId});
+      return;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.primaryLight,
       appBar: AppBar(title: const Text('Buscar')),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -110,20 +116,24 @@ class _SearchViewState extends State<_SearchView> {
                   child: Container(
                     height: 44,
                     decoration: AppDecorations.editText,
-                    alignment: Alignment.center,
-                    child: TextField(
-                      controller: _ctrl,
-                      textInputAction: TextInputAction.search,
-                      onSubmitted: (_) => _runSearch(),
-                      style: const TextStyle(color: AppColors.black),
-                      decoration: const InputDecoration(
-                        hintText:
-                            'Cliente, pedido, dirección, teléfono, visita, incidencia...',
-                        hintStyle: TextStyle(color: Colors.grey),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 10),
-                      ),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _ctrl,
+                            textInputAction: TextInputAction.search,
+                            onSubmitted: (_) => _runSearch(),
+                            style:
+                                const TextStyle(color: AppColors.textPrimary),
+                            decoration: AppDecorations.bareInput(
+                              hintText:
+                                  'Cliente, pedido, dirección, teléfono, visita, incidencia...',
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -146,8 +156,10 @@ class _SearchViewState extends State<_SearchView> {
                     children: [
                       Text(
                         c.statusText,
-                        style: const TextStyle(
-                            fontSize: 13, color: Color(0xFF555555)),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 12),
                       if (c.loading)
@@ -177,12 +189,10 @@ class _SearchViewState extends State<_SearchView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$title (${items.length})',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF5D4037),
+          Builder(
+            builder: (context) => Text(
+              '$title (${items.length})',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
           const SizedBox(height: 8),
@@ -192,8 +202,13 @@ class _SearchViewState extends State<_SearchView> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: AppDecorations.chipLight,
-              child: const Text('Sin resultados',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF607D8B))),
+              child: Builder(
+                builder: (context) => Text('Sin resultados',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: AppColors.textMuted)),
+              ),
             )
           else
             for (final r in items) _ResultCard(result: r, onTap: () => _openResult(r)),
@@ -222,7 +237,7 @@ class _ResultCard extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.cardStroke),
+              border: Border.all(color: AppColors.border),
             ),
             clipBehavior: Clip.antiAlias,
             child: IntrinsicHeight(
@@ -251,7 +266,7 @@ class _ResultCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                                fontSize: 13, color: Color(0xFF455A64)),
+                                fontSize: 13, color: AppColors.textSecondary),
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -259,7 +274,7 @@ class _ResultCard extends StatelessWidget {
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                                fontSize: 12, color: Color(0xFF455A64)),
+                                fontSize: 12, color: AppColors.textSecondary),
                           ),
                           const SizedBox(height: 2),
                           Text(

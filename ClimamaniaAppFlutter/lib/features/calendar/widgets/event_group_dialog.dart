@@ -108,14 +108,16 @@ class _GroupRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.cardStroke),
+        border: Border.all(color: AppColors.border),
       ),
       clipBehavior: Clip.antiAlias,
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(width: 5, color: EventStyles.forEvento(ev)),
+            Container(
+                width: 5,
+                color: EventStyles.readable(EventStyles.forEvento(ev))),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(10),
@@ -140,7 +142,7 @@ class _GroupRow extends StatelessWidget {
                       style: info.isEmpty
                           ? UiText.placeholderStyle
                           : const TextStyle(
-                              fontSize: 13, color: Color(0xFF455A64)),
+                              fontSize: 13, color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 8),
                     Align(

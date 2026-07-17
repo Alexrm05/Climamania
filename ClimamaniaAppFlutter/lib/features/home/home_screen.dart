@@ -5,12 +5,14 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/repositories/home_repository.dart';
 import '../../services/session_service.dart';
+import '../../core/widgets/fade_slide_in.dart';
 import '../../theme/app_colors.dart';
 import '../shell/refresh_signal.dart';
 import 'home_controller.dart';
+import '../../theme/app_spacing.dart';
 import 'widgets/greeting_hero.dart';
 import 'widgets/installation_card.dart';
-import 'widgets/pending_button.dart';
+import 'widgets/metric_tile.dart';
 import 'widgets/search_card.dart';
 
 /// Pantalla de Inicio. Réplica de `MainActivity` + `activity_main.xml`.
@@ -107,6 +109,7 @@ class _HomeViewState extends State<_HomeView> {
   }
 
   void _onSearch(String query) {
+    FocusScope.of(context).unfocus(); // cerrar el teclado al buscar
     if (query.trim().isEmpty) {
       _msg('Introduce un dato para buscar');
       return;
@@ -125,59 +128,93 @@ class _HomeViewState extends State<_HomeView> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
             children: [
-              GreetingHero(name: c.greeting),
-              const SizedBox(height: 14),
-              PendingButton(
-                variant: PendingVariant.green,
-                text: c.visitasText,
-                onTap: () => context.push('/visitas'),
-              ),
-              const SizedBox(height: 10),
-              PendingButton(
-                variant: PendingVariant.red,
-                text: c.incidenciasText,
-                onTap: () => context.push('/incidencias'),
-              ),
-              const SizedBox(height: 14),
-              SearchCard(onSearch: _onSearch),
-              const SizedBox(height: 16),
-              const Text(
-                'Resumen de hoy',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryDark,
+              FadeSlideIn(child: GreetingHero(name: c.greeting)),
+              const SizedBox(height: AppSpacing.lg),
+              FadeSlideIn(
+                delayMs: 70,
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: MetricTile(
+                          tone: MetricTone.success,
+                          icon: Icons.event_available_outlined,
+                          label: 'Visitas',
+                          count: c.visitasCount,
+                          error: c.visitasError,
+                          onTap: () => context.push('/visitas'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: MetricTile(
+                          tone: MetricTone.danger,
+                          icon: Icons.report_problem_outlined,
+                          label: 'Incidencias',
+                          count: c.incidenciasCount,
+                          error: c.incidenciasError,
+                          onTap: () => context.push('/incidencias'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 6),
-              InstallationCard(
-                isEnCurso: true,
-                state: c.enCurso,
-                onMaps: () => _openMaps(c.enCurso.data?.direccionParaMapa),
-                onCall: () => _call(c.enCurso.data?.telefono),
-                onWhatsapp: () => _whatsapp(
-                    c.enCurso.data?.whatsapp, c.enCurso.data?.telefono),
-                onTap: c.enCurso.hasData
-                    ? () => context.push('/pedido', extra: {
-                          'ref': c.enCurso.data!.referencia,
-                          'cliente': c.enCurso.data!.cliente,
-                        })
-                    : null,
+              const SizedBox(height: AppSpacing.lg),
+              FadeSlideIn(
+                delayMs: 140,
+                child: SearchCard(onSearch: _onSearch),
               ),
+              const SizedBox(height: AppSpacing.xl),
+              FadeSlideIn(
+                delayMs: 200,
+                child: Text(
+                  'Resumen de hoy',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              // Una tarjeta por cada instalación en curso (pueden ser varias en
+              // paralelo, de equipos distintos).
+              for (int i = 0; i < c.enCurso.length; i++) ...[
+                if (i > 0) const SizedBox(height: 10),
+                FadeSlideIn(
+                  delayMs: 240 + i * 60,
+                  child: InstallationCard(
+                    isEnCurso: true,
+                    state: c.enCurso[i],
+                    onMaps: () =>
+                        _openMaps(c.enCurso[i].data?.direccionParaMapa),
+                    onCall: () => _call(c.enCurso[i].data?.telefono),
+                    onWhatsapp: () => _whatsapp(c.enCurso[i].data?.whatsapp,
+                        c.enCurso[i].data?.telefono),
+                    onTap: c.enCurso[i].hasData
+                        ? () => context.push('/pedido', extra: {
+                              'ref': c.enCurso[i].data!.referencia,
+                              'cliente': c.enCurso[i].data!.cliente,
+                            })
+                        : null,
+                  ),
+                ),
+              ],
               const SizedBox(height: 10),
-              InstallationCard(
-                isEnCurso: false,
-                state: c.proxima,
-                onMaps: () => _openMaps(c.proxima.data?.direccionParaMapa),
-                onCall: () => _call(c.proxima.data?.telefono),
-                onWhatsapp: () => _whatsapp(
-                    c.proxima.data?.whatsapp, c.proxima.data?.telefono),
-                onTap: c.proxima.hasData
-                    ? () => context.push('/pedido', extra: {
-                          'ref': c.proxima.data!.referencia,
-                          'cliente': c.proxima.data!.cliente,
-                        })
-                    : null,
+              FadeSlideIn(
+                delayMs: 300,
+                child: InstallationCard(
+                  isEnCurso: false,
+                  state: c.proxima,
+                  onMaps: () => _openMaps(c.proxima.data?.direccionParaMapa),
+                  onCall: () => _call(c.proxima.data?.telefono),
+                  onWhatsapp: () => _whatsapp(
+                      c.proxima.data?.whatsapp, c.proxima.data?.telefono),
+                  onTap: c.proxima.hasData
+                      ? () => context.push('/pedido', extra: {
+                            'ref': c.proxima.data!.referencia,
+                            'cliente': c.proxima.data!.cliente,
+                          })
+                      : null,
+                ),
               ),
             ],
           ),

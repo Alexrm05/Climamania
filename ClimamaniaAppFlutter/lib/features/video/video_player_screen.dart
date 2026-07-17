@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
 
 /// Reproductor de vídeo. Réplica de VideoPlayerActivity + content_video_player:
 /// marco negro, "Cargando...", controles, y fallback a la siguiente URL si una
@@ -77,29 +79,29 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       backgroundColor: AppColors.primaryLight,
       appBar: AppBar(title: const Text('Reproductor de vídeo')),
       body: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: Container(
-                color: Colors.black,
-                child: Center(child: _videoArea()),
+              child: ClipRRect(
+                borderRadius: AppRadius.brLg,
+                child: Container(
+                  color: Colors.black,
+                  child: Center(child: _videoArea()),
+                ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             SizedBox(
               height: 52,
               child: OutlinedButton(
                 onPressed: () => context.pop(),
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: AppColors.white,
-                  foregroundColor: AppColors.primaryDark,
-                  side: const BorderSide(color: AppColors.primaryDark),
+                  foregroundColor: AppColors.textSecondary,
+                  side: const BorderSide(color: AppColors.borderStrong),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                  textStyle: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.bold),
+                      borderRadius: AppRadius.brPill),
                 ),
                 child: const Text('Volver'),
               ),

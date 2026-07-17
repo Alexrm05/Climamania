@@ -2,11 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/widgets/status_badge.dart';
 import '../../data/models/pedido.dart';
 import '../../data/repositories/pedido_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
+
+String _titleCase(String s) => s
+    .split(RegExp(r'\s+'))
+    .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1).toLowerCase())
+    .join(' ');
 
 /// Hub del flujo "Realizar instalación". Réplica de InstallActivity.
 class InstallScreen extends StatefulWidget {
@@ -54,10 +62,11 @@ class _InstallScreenState extends State<InstallScreen> {
   }
 
   Future<void> _guardarNota() async {
+    FocusScope.of(context).unfocus(); // cerrar el teclado al guardar
     await context
         .read<SessionService>()
         .savePrivateNote(widget.referencia, _notaCtrl.text);
-    _msg('Comentario guardado en este dispositivo');
+    if (mounted) _msg('Comentario guardado en este dispositivo');
   }
 
   void _abrirFotos(String categoria, String titulo, String clave) {
@@ -88,6 +97,7 @@ class _InstallScreenState extends State<InstallScreen> {
               child: const Text('Cancelar')),
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.confirm),
               child: const Text('Guardar')),
         ],
       ),
@@ -125,180 +135,242 @@ class _InstallScreenState extends State<InstallScreen> {
       backgroundColor: AppColors.primaryLight,
       appBar: AppBar(title: const Text('Realizar instalación')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           _header(),
+          const SizedBox(height: AppSpacing.md),
           _notas(),
-          _seccion('Fotografías y documentación', Column(
-            children: [
-              _fotoBtn('Fotos previas', 'previas', 'PREINST'),
-              _fotoBtn('Fotos incidencias', 'incidencias', 'DURINST'),
-              _fotoBtn('Fotos acabada', 'acabada', 'POSTINST'),
-              _fotoBtn('Fotos conforme', 'conforme', 'CONFCLI'),
-              _fotoBtn('Documento BOE', 'boe', 'DOCUBOE'),
-            ],
-          )),
-          _seccion('Acciones', Column(
-            children: [
-              _accionBtn('Añadir comentarios', Icons.comment, _anadirComentario),
-              const SizedBox(height: 10),
-              _accionBtn('Firma conforme cliente', Icons.draw, _firmaConforme),
-            ],
-          )),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _finalizar,
-                    child: const Text('Finalizar instalación'),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: OutlinedButton(
-                    onPressed: () => context.pop(),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryDark,
-                      side: const BorderSide(color: AppColors.primaryDark),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5)),
-                    ),
-                    child: const Text('Volver'),
-                  ),
-                ),
-              ),
-            ],
+          const SizedBox(height: AppSpacing.md),
+          _seccion(
+            'Fotografías y documentación',
+            Column(
+              children: [
+                _fotoRow('Fotos previas', 'previas', 'PREINST'),
+                _rowDivider(),
+                _fotoRow('Fotos incidencias', 'incidencias', 'DURINST'),
+                _rowDivider(),
+                _fotoRow('Fotos acabada', 'acabada', 'POSTINST'),
+                _rowDivider(),
+                _fotoRow('Fotos conforme', 'conforme', 'CONFCLI'),
+                _rowDivider(),
+                _fotoRow('Documento BOE', 'boe', 'DOCUBOE'),
+              ],
+            ),
           ),
-        ),
+          const SizedBox(height: AppSpacing.md),
+          _seccion(
+            'Acciones',
+            Column(
+              children: [
+                _accionRow('Añadir comentarios', 'Notas para el pedido',
+                    Icons.chat_outlined, AppColors.successFg,
+                    AppColors.successTint, _anadirComentario),
+                _rowDivider(),
+                _accionRow('Firma conforme cliente', 'Recoge la conformidad',
+                    Icons.draw_outlined, AppColors.infoFg, AppColors.infoTint,
+                    _firmaConforme),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: _finalizar,
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.confirm,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: AppRadius.brPill)),
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('Finalizar instalación'),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _header() {
+    final t = Theme.of(context).textTheme;
+    final cliente = widget.cliente.isNotEmpty
+        ? _titleCase(widget.cliente)
+        : 'Pedido ${widget.referencia}';
     return Container(
       decoration: AppDecorations.detailHero,
-      padding: const EdgeInsets.all(18),
-      child: Column(
+      child: ClipRRect(
+        borderRadius: AppRadius.brLg,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const StatusBadge('Instalación',
+                      tone: BadgeTone.brand, icon: Icons.hvac),
+                  const Spacer(),
+                  if (widget.referencia.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: AppDecorations.chipLight,
+                      child: Text('Nº ${widget.referencia}',
+                          style: t.labelMedium
+                              ?.copyWith(color: AppColors.textSecondary)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(cliente,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: t.headlineSmall),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Sube las fotos de cada fase, firma el conforme del cliente y finaliza la instalación.',
+                style: t.bodyMedium?.copyWith(color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _notas() {
+    return _seccion(
+      'Comentario privado',
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.referencia,
+          Text('Solo se guarda en este dispositivo.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.textMuted)),
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            decoration: AppDecorations.editText,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: TextField(
+              controller: _notaCtrl,
+              minLines: 3,
+              maxLines: 6,
               style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary)),
-          if (widget.cliente.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(widget.cliente,
-                  style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryDark)),
+                  fontSize: 15, color: AppColors.textPrimary),
+              decoration: AppDecorations.bareInput(
+                hintText: 'Notas privadas...',
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              ),
             ),
-          const SizedBox(height: 8),
-          const Text(
-            'Sube las fotos de cada fase, firma el conforme del cliente y finaliza la instalación.',
-            style: TextStyle(fontSize: 13, color: Color(0xFF6D4C41)),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: ElevatedButton(
+              onPressed: _guardarNota,
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.confirm,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: AppRadius.brPill)),
+              child: const Text('Guardar comentario'),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _notas() {
-    return _seccion('Comentario privado (solo en este dispositivo)', Column(
-      children: [
-        Container(
-          decoration: AppDecorations.editText,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: TextField(
-            controller: _notaCtrl,
-            minLines: 3,
-            maxLines: 6,
-            style: const TextStyle(fontSize: 15, color: Color(0xFF424242)),
-            decoration: const InputDecoration(
-              hintText: 'Notas privadas...',
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 12),
-            ),
+  Widget _seccion(String title, Widget child) {
+    return Container(
+      width: double.infinity,
+      decoration: AppDecorations.whiteCard,
+      child: ClipRRect(
+        borderRadius: AppRadius.brLg,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: AppSpacing.md),
+              child,
+            ],
           ),
         ),
-        const SizedBox(height: 10),
-        SizedBox(
-          width: double.infinity,
-          height: 44,
-          child: ElevatedButton(
-            onPressed: _guardarNota,
-            child: const Text('Guardar comentario'),
-          ),
-        ),
-      ],
-    ));
+      ),
+    );
   }
 
-  Widget _seccion(String title, Widget child) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: Container(
-        width: double.infinity,
-        decoration: AppDecorations.whiteCard,
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _rowDivider() => const Divider(height: 1, color: AppColors.border);
+
+  Widget _fotoRow(String label, String categoria, String clave) {
+    final tiene = _tieneFotos(categoria);
+    return _hubRow(
+      label: label,
+      subtitle: tiene ? 'Fotos añadidas' : 'Sin fotos aún',
+      icon: tiene ? Icons.check_circle : Icons.photo_camera_outlined,
+      fg: tiene ? AppColors.successFg : AppColors.primary,
+      tint: tiene ? AppColors.successTint : AppColors.footerActiveBg,
+      onTap: () => _abrirFotos(categoria, label, clave),
+    );
+  }
+
+  Widget _accionRow(String label, String subtitle, IconData icon, Color fg,
+      Color tint, VoidCallback onTap) {
+    return _hubRow(
+        label: label,
+        subtitle: subtitle,
+        icon: icon,
+        fg: fg,
+        tint: tint,
+        onTap: onTap);
+  }
+
+  Widget _hubRow({
+    required String label,
+    required String subtitle,
+    required IconData icon,
+    required Color fg,
+    required Color tint,
+    required VoidCallback onTap,
+  }) {
+    final t = Theme.of(context).textTheme;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: Row(
           children: [
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryDark)),
-            const SizedBox(height: 10),
-            child,
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration:
+                  BoxDecoration(color: tint, borderRadius: AppRadius.brMd),
+              child: Icon(icon, color: fg, size: 22),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(label, style: t.titleSmall),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style:
+                          t.bodySmall?.copyWith(color: AppColors.textMuted)),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            const Icon(Icons.chevron_right_rounded,
+                color: AppColors.textMuted, size: 20),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _fotoBtn(String label, String categoria, String clave) {
-    final tiene = _tieneFotos(categoria);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: SizedBox(
-        width: double.infinity,
-        height: 46,
-        child: ElevatedButton.icon(
-          onPressed: () => _abrirFotos(categoria, label, clave),
-          style: ElevatedButton.styleFrom(
-            backgroundColor:
-                tiene ? const Color(0xFF2E7D32) : AppColors.primary,
-            alignment: Alignment.centerLeft,
-          ),
-          icon: Icon(tiene ? Icons.check_circle : Icons.photo_camera, size: 20),
-          label: Text(label),
-        ),
-      ),
-    );
-  }
-
-  Widget _accionBtn(String label, IconData icon, VoidCallback onTap) {
-    return SizedBox(
-      width: double.infinity,
-      height: 46,
-      child: ElevatedButton.icon(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(alignment: Alignment.centerLeft),
-        icon: Icon(icon, size: 20),
-        label: Text(label),
       ),
     );
   }

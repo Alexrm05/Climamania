@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
+import '../tab_history.dart';
 
 /// Item de la barra inferior. El icono puede ser un PNG corporativo (con tinte)
-/// o un icono Material (Valoraciones/Adicionales, como en Android).
+/// o un icono Material.
 class _NavItem {
   final String label;
   final String? asset;
   final IconData? icon;
-  final double fontSize;
-  const _NavItem(this.label, {this.asset, this.icon, this.fontSize = 11});
+  const _NavItem(this.label, {this.asset, this.icon});
 }
 
-/// Barra inferior de 5 pestañas. Réplica de la barra de `activity_base.xml`:
-/// Calendario · Inicio · Valoraciones · Adicionales · Web.
+/// Barra inferior de 5 pestañas:
+/// Calendario · Adicionales · Inicio · Valoraciones · Web.
 class BottomNavBar extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -22,37 +23,41 @@ class BottomNavBar extends StatelessWidget {
 
   static const _items = <_NavItem>[
     _NavItem('Calendario', asset: 'assets/images/ic_calendar.png'),
+    _NavItem('Adicionales', icon: Icons.add_box_outlined),
     _NavItem('Inicio', asset: 'assets/images/ic_home.png'),
-    _NavItem('Valoraciones', icon: Icons.star),
-    _NavItem('Adicionales', icon: Icons.add_box, fontSize: 10),
+    _NavItem('Valoraciones', icon: Icons.star_border),
     _NavItem('Web', asset: 'assets/images/ic_web.png'),
   ];
 
-  void _onTap(int index) {
+  void _onTap(BuildContext context, int index) {
+    final current = navigationShell.currentIndex;
+    // Registra la pestaña actual en el historial antes de cambiar, para que la
+    // flecha de "volver" pueda regresar a ella.
+    if (index != current) {
+      context.read<TabHistory>().record(current);
+    }
     navigationShell.goBranch(
       index,
-      initialLocation: index == navigationShell.currentIndex,
+      initialLocation: index == current,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: AppDecorations.footerBar,
       child: Row(
         children: [
-          for (var i = 0; i < _items.length; i++) ...[
-            if (i > 0) const SizedBox(width: 8),
+          for (var i = 0; i < _items.length; i++)
             Expanded(
               child: _FooterItem(
                 item: _items[i],
                 active: navigationShell.currentIndex == i,
-                onTap: () => _onTap(i),
+                onTap: () => _onTap(context, i),
               ),
             ),
-          ],
         ],
       ),
     );
@@ -78,47 +83,39 @@ class _FooterItem extends StatelessWidget {
     if (item.asset != null) {
       iconWidget = Image.asset(
         item.asset!,
-        width: 22,
-        height: 22,
+        width: 24,
+        height: 24,
         color: color,
         colorBlendMode: BlendMode.srcIn,
       );
     } else {
-      iconWidget = Icon(item.icon, size: 22, color: color);
+      iconWidget = Icon(item.icon, size: 24, color: color);
     }
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: AnimatedScale(
-        scale: active ? 1.04 : 1.0,
-        duration: const Duration(milliseconds: 160),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          height: 52,
-          decoration:
-              active ? AppDecorations.footerItemActive : const BoxDecoration(),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              iconWidget,
-              const SizedBox(height: 4),
-              // Una sola línea; se reduce si la etiqueta no cabe (p. ej. "Valoraciones").
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  item.label,
-                  maxLines: 1,
-                  softWrap: false,
-                  style: TextStyle(
-                    fontSize: item.fontSize,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-                ),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
+        decoration:
+            active ? AppDecorations.footerItemActive : const BoxDecoration(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            iconWidget,
+            const SizedBox(height: 3),
+            Text(
+              item.label,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+                color: color,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

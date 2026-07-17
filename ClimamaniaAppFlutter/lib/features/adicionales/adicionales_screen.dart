@@ -6,13 +6,25 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:signature/signature.dart';
 
+import '../../core/fecha.dart';
 import '../../core/format.dart';
 import '../../data/models/catalogo.dart';
 import '../../data/repositories/adicionales_repository.dart';
+import '../../data/repositories/pedido_repository.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/status_badge.dart';
 import '../../services/location_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_shadows.dart';
+import '../../theme/app_spacing.dart';
+
+String _titleCase(String s) => s
+    .split(RegExp(r'\s+'))
+    .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1).toLowerCase())
+    .join(' ');
 
 /// Pantalla de la pestaña "Adicionales": crear presupuesto y buscar presupuestos.
 /// Réplica de AdicionalesPresupuestoActivity. Se muestra dentro del shell.
@@ -31,11 +43,11 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
   final _nombreCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _telefonoCtrl = TextEditingController();
-  final _direccionCtrl = TextEditingController();
   final _catalogoCtrl = TextEditingController();
   Timer? _catalogoDebounce;
   bool _buscandoCatalogo = false;
   List<CatalogProduct> _resultadosCatalogo = [];
+  List<CatalogProduct> _masUsados = [];
   final List<BudgetLine> _lineas = [];
   final Map<int, TextEditingController> _descCtrls = {};
   late final SignatureController _sig;
@@ -49,15 +61,46 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
   List<String> _estados = ['TODOS'];
   List<PresupuestoResumen> _presupuestos = [];
 
+  bool _cargandoRef = false;
+
   AdicionalesRepository get _repo => context.read<AdicionalesRepository>();
   SessionService get _session => context.read<SessionService>();
+
+  /// Carga los datos del cliente a partir del número de pedido/referencia.
+  Future<void> _cargarReferencia() async {
+    FocusScope.of(context).unfocus();
+    final ref = _refCtrl.text.trim();
+    if (ref.isEmpty) {
+      _msg('Escribe el número de pedido');
+      return;
+    }
+    setState(() => _cargandoRef = true);
+    final res = await context.read<PedidoRepository>().getPedido(ref);
+    if (!mounted) return;
+    setState(() => _cargandoRef = false);
+    final p = res.pedido;
+    if (p == null) {
+      _msg('No se encontró el pedido $ref');
+      return;
+    }
+    final tel = [
+      p.entrega?.telefono ?? '',
+      p.facturacion?.telefono ?? '',
+    ].map((e) => e.trim()).firstWhere((e) => e.isNotEmpty, orElse: () => '');
+    setState(() {
+      if (p.cliente.isNotEmpty) _nombreCtrl.text = p.cliente;
+      if (p.emailCliente.isNotEmpty) _emailCtrl.text = p.emailCliente;
+      if (tel.isNotEmpty) _telefonoCtrl.text = tel;
+    });
+    _msg('Datos cargados del pedido $ref');
+  }
 
   @override
   void initState() {
     super.initState();
     _sig = SignatureController(
       penStrokeWidth: 2.4,
-      penColor: const Color(0xFF1565C0),
+      penColor: AppColors.primary,
       exportBackgroundColor: Colors.white,
     );
     // Dev: abrir directamente la pestaña Buscar.
@@ -67,6 +110,12 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
         if (mounted) _buscar();
       });
     }
+    _cargarMasUsados();
+  }
+
+  Future<void> _cargarMasUsados() async {
+    final res = await _repo.getMasUsados();
+    if (mounted) setState(() => _masUsados = res);
   }
 
   @override
@@ -75,7 +124,6 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
     _nombreCtrl.dispose();
     _emailCtrl.dispose();
     _telefonoCtrl.dispose();
-    _direccionCtrl.dispose();
     _catalogoCtrl.dispose();
     _buscarCtrl.dispose();
     _catalogoDebounce?.cancel();
@@ -152,6 +200,7 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
   double get _totalIva => _totalConIva - _totalSinIva;
 
   Future<void> _guardar() async {
+    FocusScope.of(context).unfocus(); // cerrar el teclado al guardar
     if (_lineas.isEmpty) {
       _msg('Añade al menos una línea al presupuesto');
       return;
@@ -196,7 +245,7 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
         'referencia': ref,
         'numero_pedido': ref.isNotEmpty ? ref : 'MANUAL',
         'nombre_cliente': _nombreCtrl.text.trim(),
-        'direccion_cliente': _direccionCtrl.text.trim(),
+        'direccion_cliente': '',
         'telefono': _telefonoCtrl.text.trim(),
         'email_cliente': email,
         'usuario_instalador': session.displayName(fallback: 'Instalador'),
@@ -275,36 +324,47 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
 
   Widget _tabs() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-      child: Row(
-        children: [
-          Expanded(child: _tabBtn('Nuevo presupuesto', 0)),
-          const SizedBox(width: 8),
-          Expanded(child: _tabBtn('Buscar', 1)),
-        ],
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceWarm,
+          borderRadius: AppRadius.brPill,
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Expanded(child: _seg('Nuevo presupuesto', 0)),
+            Expanded(child: _seg('Buscar', 1)),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _tabBtn(String label, int index) {
+  Widget _seg(String label, int index) {
     final active = _tab == index;
+    final t = Theme.of(context).textTheme;
     return GestureDetector(
       onTap: () {
         setState(() => _tab = index);
         if (index == 1 && _presupuestos.isEmpty) _buscar();
       },
-      child: Container(
-        height: 40,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        height: 38,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: active ? AppColors.primary : AppColors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.primary),
+          color: active ? AppColors.primary : Colors.transparent,
+          borderRadius: AppRadius.brPill,
+          boxShadow: active ? AppShadows.card : null,
         ),
         child: Text(label,
-            style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: active ? AppColors.white : AppColors.primary)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: t.labelLarge?.copyWith(
+                color: active ? AppColors.white : AppColors.textSecondary)),
       ),
     );
   }
@@ -318,6 +378,24 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
         _card('Datos del cliente', Column(
           children: [
             _field('Referencia / pedido (opcional)', _refCtrl),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: ElevatedButton.icon(
+                onPressed: _cargandoRef ? null : _cargarReferencia,
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.infoFg),
+                icon: _cargandoRef
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: AppColors.white))
+                    : const Icon(Icons.search),
+                label: const Text('Cargar datos del pedido'),
+              ),
+            ),
             const SizedBox(height: 8),
             _field('Nombre del cliente', _nombreCtrl),
             const SizedBox(height: 8),
@@ -325,8 +403,6 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
                 keyboard: TextInputType.emailAddress),
             const SizedBox(height: 8),
             _field('Teléfono', _telefonoCtrl, keyboard: TextInputType.phone),
-            const SizedBox(height: 8),
-            _field('Dirección', _direccionCtrl, lines: 2),
           ],
         )),
         _card('Catálogo', Column(
@@ -340,6 +416,21 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
                 child: Center(child: CircularProgressIndicator()),
               ),
             for (final p in _resultadosCatalogo) _resultadoCatalogo(p),
+            // Sin búsqueda activa: acceso rápido a los 5 más usados.
+            if (!_buscandoCatalogo &&
+                _catalogoCtrl.text.trim().isEmpty &&
+                _resultadosCatalogo.isEmpty &&
+                _masUsados.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 2),
+                child: Text('Más usados',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(color: AppColors.textSecondary)),
+              ),
+              for (final p in _masUsados) _resultadoCatalogo(p),
+            ],
           ],
         )),
         if (_lineas.isNotEmpty)
@@ -359,9 +450,9 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
             Container(
               height: 200,
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: AppColors.cardStroke),
-                borderRadius: BorderRadius.circular(8),
+                color: AppColors.white,
+                border: Border.all(color: AppColors.border),
+                borderRadius: AppRadius.brMd,
               ),
               clipBehavior: Clip.antiAlias,
               child: Signature(controller: _sig, backgroundColor: Colors.white),
@@ -383,6 +474,7 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
           height: 50,
           child: ElevatedButton(
             onPressed: _guardando ? null : _guardar,
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.confirm),
             child: _guardando
                 ? const SizedBox(
                     width: 18,
@@ -402,11 +494,11 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
       child: InkWell(
         onTap: () => _addLine(p),
         child: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.cardStroke),
+            color: AppColors.surface,
+            borderRadius: AppRadius.brMd,
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             children: [
@@ -415,15 +507,18 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(p.codigo.isEmpty ? 'SIN CÓDIGO' : p.codigo,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFEE8A2D))),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(color: AppColors.primary)),
                     Text(p.descripcion,
-                        style: const TextStyle(fontSize: 13)),
+                        style: Theme.of(context).textTheme.bodyMedium),
                     Text(
                         'IVA ${p.ivaPct.toStringAsFixed(0)}%${p.ivaFallback ? ' (estimado)' : ''} · Tocar para añadir',
-                        style: const TextStyle(
-                            fontSize: 12, color: AppColors.textSecondary)),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: AppColors.textMuted)),
                   ],
                 ),
               ),
@@ -438,12 +533,12 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
   Widget _lineaWidget(BudgetLine l) {
     final pr = l.pricing;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.cardStroke),
+        color: AppColors.surfaceWarm,
+        borderRadius: AppRadius.brMd,
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,12 +548,13 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
               Expanded(
                 child: Text(
                     l.product.codigo.isEmpty ? 'SIN CÓDIGO' : l.product.codigo,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFEE8A2D))),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(color: AppColors.primary)),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: Color(0xFFB00020)),
+                icon: const Icon(Icons.delete_outline, color: AppColors.errorFg),
                 onPressed: () => _removeLine(l),
               ),
             ],
@@ -499,18 +595,20 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
   }
 
   Widget _qtyBtn(IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        width: 34,
-        height: 34,
-        decoration: BoxDecoration(
-          color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: AppColors.cardStroke),
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.brSm,
+        side: const BorderSide(color: AppColors.borderStrong),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: Icon(icon, size: 20, color: AppColors.primary),
         ),
-        child: Icon(icon, size: 20, color: AppColors.primaryDark),
       ),
     );
   }
@@ -519,7 +617,7 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
     final style = TextStyle(
       fontSize: bold ? 16 : 14,
       fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-      color: bold ? AppColors.primaryDark : const Color(0xFF455A64),
+      color: bold ? AppColors.primaryDark : AppColors.textSecondary,
     );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -565,9 +663,11 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
           child: _buscando
               ? const Center(child: CircularProgressIndicator())
               : _presupuestos.isEmpty
-                  ? const Center(
-                      child: Text('Sin resultados para esta búsqueda',
-                          style: TextStyle(color: AppColors.textSecondary)))
+                  ? const EmptyState(
+                      icon: Icons.request_quote_outlined,
+                      title: 'Sin presupuestos',
+                      subtitle:
+                          'No hay presupuestos para esta búsqueda o filtro.')
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
                       children: [
@@ -581,65 +681,76 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
 
   Widget _presupuestoItem(PresupuestoResumen p) {
     final cancelado = p.estado.toUpperCase() == 'CANCELADO';
+    final t = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: () => context.push('/presupuesto', extra: {'id': p.id}),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.cardStroke),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Container(
+        decoration: AppDecorations.whiteCard,
+        child: ClipRRect(
+          borderRadius: AppRadius.brLg,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => context.push('/presupuesto', extra: {'id': p.id}),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text('#${p.id} · Pedido ${p.numeroPedido}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryDark)),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text('#${p.id} · Pedido ${p.numeroPedido}',
+                              style: t.labelMedium
+                                  ?.copyWith(color: AppColors.textMuted)),
+                        ),
+                        StatusBadge(p.estado,
+                            tone: cancelado
+                                ? BadgeTone.danger
+                                : BadgeTone.success,
+                            solid: true),
+                      ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: cancelado
-                            ? const Color(0xFF9A3412)
-                            : const Color(0xFF345C38),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(p.estado,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold)),
+                    if (p.cliente.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(_titleCase(p.cliente), style: t.titleSmall),
+                    ],
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                        [
+                          if (p.telefono.isNotEmpty) p.telefono,
+                          if (p.equipo.isNotEmpty) 'Equipo ${p.equipo}',
+                          if (p.usuario.isNotEmpty) p.usuario,
+                          if (p.fecha.isNotEmpty) Fecha.parse(p.fecha),
+                        ].join(' · '),
+                        style: t.bodySmall
+                            ?.copyWith(color: AppColors.textMuted)),
+                    const SizedBox(height: AppSpacing.xs),
+                    Row(
+                      children: [
+                        Text('Total ${euros(p.importeConIva)}',
+                            style: t.titleSmall
+                                ?.copyWith(color: AppColors.primaryDark)),
+                        const Spacer(),
+                        Icon(
+                            p.mailEnviado
+                                ? Icons.mark_email_read_outlined
+                                : Icons.schedule_send_outlined,
+                            size: 15,
+                            color: p.mailEnviado
+                                ? AppColors.successFg
+                                : AppColors.textMuted),
+                        const SizedBox(width: 4),
+                        Text(p.mailEnviado ? 'Mail OK' : 'Mail pendiente',
+                            style: t.labelMedium?.copyWith(
+                                color: p.mailEnviado
+                                    ? AppColors.successFg
+                                    : AppColors.textMuted)),
+                      ],
                     ),
                   ],
                 ),
-                if (p.cliente.isNotEmpty)
-                  Text(p.cliente,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(
-                    [
-                      if (p.telefono.isNotEmpty) p.telefono,
-                      if (p.equipo.isNotEmpty) 'Equipo ${p.equipo}',
-                      if (p.usuario.isNotEmpty) p.usuario,
-                      if (p.fecha.isNotEmpty) p.fecha,
-                    ].join(' · '),
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary)),
-                Text(
-                    'Total: ${euros(p.importeConIva)}${p.mailEnviado ? ' · Mail OK' : ' · Mail pendiente'}',
-                    style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.bold)),
-              ],
+              ),
             ),
           ),
         ),
@@ -651,22 +762,23 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
 
   Widget _card(String title, Widget child) {
     return Padding(
-      padding: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.only(top: AppSpacing.md),
       child: Container(
         width: double.infinity,
         decoration: AppDecorations.whiteCard,
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryDark)),
-            const SizedBox(height: 10),
-            child,
-          ],
+        child: ClipRRect(
+          borderRadius: AppRadius.brLg,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.md),
+                child,
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -685,9 +797,8 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
         minLines: lines,
         maxLines: lines == 1 ? 1 : lines + 1,
         onChanged: onChanged,
-        decoration: InputDecoration(
+        decoration: AppDecorations.bareInput(
             labelText: label,
-            border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 10)),
       ),
     );

@@ -3,12 +3,21 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/fecha.dart';
 import '../../core/format.dart';
+import '../../core/widgets/status_badge.dart';
 import '../../data/models/presupuesto_detalle.dart';
 import '../../data/repositories/adicionales_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
+
+String _titleCase(String s) => s
+    .split(RegExp(r'\s+'))
+    .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1).toLowerCase())
+    .join(' ');
 
 /// Detalle de un presupuesto. Réplica de PresupuestoInstaladorDetalleActivity.
 class PresupuestoDetalleScreen extends StatefulWidget {
@@ -127,66 +136,65 @@ class _PresupuestoDetalleScreenState extends State<PresupuestoDetalleScreen> {
   }
 
   Widget _content(PresupuestoDetalle d) {
+    final t = Theme.of(context).textTheme;
     final cancelado = d.estado.toUpperCase() == 'CANCELADO';
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        Container(
-          decoration: AppDecorations.whiteCard,
-          padding: const EdgeInsets.all(14),
-          child: Column(
+        _card(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Expanded(
                     child: Text('Pedido ${d.numeroPedido}',
-                        style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryDark)),
+                        style: t.titleMedium),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: cancelado
-                          ? const Color(0xFF9A3412)
-                          : const Color(0xFF345C38),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(d.estado,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold)),
-                  ),
+                  StatusBadge(d.estado,
+                      tone: cancelado ? BadgeTone.danger : BadgeTone.success,
+                      solid: true),
                 ],
               ),
-              const SizedBox(height: 8),
-              if (d.cliente.isNotEmpty) _line('Cliente', d.cliente),
-              if (d.direccion.isNotEmpty) _line('Dirección', d.direccion),
-              if (d.telefono.isNotEmpty) _line('Teléfono', d.telefono),
-              if (d.email.isNotEmpty) _line('Email', d.email),
-              if (d.equipo.isNotEmpty) _line('Equipo', d.equipo),
-              if (d.usuario.isNotEmpty) _line('Instalador', d.usuario),
-              if (d.fecha.isNotEmpty) _line('Fecha', d.fecha),
-              _line('Mail', d.mailEnviado ? 'Enviado' : 'Pendiente'),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
+              if (d.cliente.isNotEmpty)
+                _info(Icons.person_outline, _titleCase(d.cliente)),
+              if (d.direccion.isNotEmpty)
+                _info(Icons.place_outlined, d.direccion),
+              if (d.telefono.isNotEmpty) _info(Icons.call_outlined, d.telefono),
+              if (d.email.isNotEmpty) _info(Icons.mail_outline, d.email),
+              if (d.equipo.isNotEmpty)
+                _info(Icons.groups_outlined, 'Equipo ${d.equipo}'),
+              if (d.usuario.isNotEmpty)
+                _info(Icons.badge_outlined, d.usuario),
+              if (d.fecha.isNotEmpty)
+                _info(Icons.event_outlined, Fecha.parse(d.fecha)),
+              _info(
+                  d.mailEnviado
+                      ? Icons.mark_email_read_outlined
+                      : Icons.schedule_send_outlined,
+                  d.mailEnviado ? 'Mail enviado' : 'Mail pendiente'),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _open(d.pdfUrl),
-                      icon: const Icon(Icons.picture_as_pdf, size: 18),
+                      style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: AppRadius.brPill)),
+                      icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
                       label: const Text('Abrir PDF'),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _open(d.firmaUrl),
-                      icon: const Icon(Icons.draw, size: 18),
+                      style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: AppRadius.brPill)),
+                      icon: const Icon(Icons.draw_outlined, size: 18),
                       label: const Text('Ver firma'),
                     ),
                   ),
@@ -195,25 +203,23 @@ class _PresupuestoDetalleScreenState extends State<PresupuestoDetalleScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 14),
-        Container(
-          decoration: AppDecorations.whiteCard,
-          padding: const EdgeInsets.all(14),
-          child: Column(
+        const SizedBox(height: AppSpacing.md),
+        _card(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Líneas',
-                  style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryDark)),
-              const SizedBox(height: 8),
+              Text('Líneas', style: t.titleMedium),
+              const SizedBox(height: AppSpacing.md),
               if (d.lineas.isEmpty)
-                const Text('Sin líneas.',
-                    style: TextStyle(color: AppColors.textSecondary))
+                Text('Sin líneas.',
+                    style:
+                        t.bodyMedium?.copyWith(color: AppColors.textMuted))
               else
                 for (final l in d.lineas) _lineaItem(l),
-              const Divider(height: 20),
+              const SizedBox(height: AppSpacing.xs),
+              Container(
+                  height: 1, width: double.infinity, color: AppColors.border),
+              const SizedBox(height: AppSpacing.md),
               _totalRow('Subtotal (sin IVA)', d.importeSinIva),
               _totalRow('IVA', d.importeIva),
               _totalRow('Total (con IVA)', d.importeConIva, bold: true),
@@ -224,16 +230,30 @@ class _PresupuestoDetalleScreenState extends State<PresupuestoDetalleScreen> {
     );
   }
 
+  Widget _card(Widget child) {
+    return Container(
+      decoration: AppDecorations.whiteCard,
+      child: ClipRRect(
+        borderRadius: AppRadius.brLg,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: child,
+        ),
+      ),
+    );
+  }
+
   Widget _lineaItem(DetalleLineaPres l) {
+    final t = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 40,
             child: Text('${l.cantidad} ×',
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+                style: t.titleSmall?.copyWith(color: AppColors.textPrimary)),
           ),
           Expanded(
             child: Column(
@@ -241,44 +261,43 @@ class _PresupuestoDetalleScreenState extends State<PresupuestoDetalleScreen> {
               children: [
                 if (l.articulo.isNotEmpty)
                   Text(l.articulo,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFEE8A2D),
-                          fontSize: 13)),
-                Text(l.descripcion, style: const TextStyle(fontSize: 13)),
+                      style:
+                          t.titleSmall?.copyWith(color: AppColors.primary)),
+                Text(l.descripcion, style: t.bodyMedium),
               ],
             ),
           ),
+          const SizedBox(width: AppSpacing.sm),
           Text(euros(l.totalConIva),
-              style: const TextStyle(fontWeight: FontWeight.bold)),
+              style: t.titleSmall?.copyWith(color: AppColors.textPrimary)),
         ],
       ),
     );
   }
 
-  Widget _line(String label, String value) {
+  Widget _info(IconData icon, String value) {
+    final t = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
-      child: RichText(
-        text: TextSpan(
-          style: const TextStyle(fontSize: 15, color: Color(0xFF424242)),
-          children: [
-            TextSpan(
-                text: '$label: ',
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-            TextSpan(text: value),
-          ],
-        ),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: AppColors.textMuted),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(value,
+                style: t.bodyMedium?.copyWith(color: AppColors.textPrimary)),
+          ),
+        ],
       ),
     );
   }
 
   Widget _totalRow(String label, double value, {bool bold = false}) {
-    final style = TextStyle(
-      fontSize: bold ? 16 : 14,
-      fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-      color: bold ? AppColors.primaryDark : const Color(0xFF455A64),
-    );
+    final t = Theme.of(context).textTheme;
+    final style = bold
+        ? t.titleMedium
+        : t.bodyMedium?.copyWith(color: AppColors.textSecondary);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -290,38 +309,52 @@ class _PresupuestoDetalleScreenState extends State<PresupuestoDetalleScreen> {
 
   Widget _actions(PresupuestoDetalle d) {
     final puedeCancelar = d.canEdit && d.estado.toUpperCase() != 'CANCELADO';
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-        child: Row(
-          children: [
-            if (puedeCancelar)
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
+          child: Row(
+            children: [
+              if (puedeCancelar) ...[
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: OutlinedButton(
+                      onPressed: _busy ? null : _cancelar,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.errorFg,
+                        side: BorderSide(
+                            color:
+                                AppColors.errorFg.withValues(alpha: 0.55)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.brPill),
+                      ),
+                      child: const Text('Cancelar'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+              ],
               Expanded(
                 child: SizedBox(
                   height: 50,
-                  child: OutlinedButton(
-                    onPressed: _busy ? null : _cancelar,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFB00020),
-                      side: const BorderSide(color: Color(0xFFB00020)),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5)),
-                    ),
-                    child: const Text('Cancelar presupuesto'),
+                  child: ElevatedButton(
+                    onPressed: () => context.pop(),
+                    style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.brPill)),
+                    child: const Text('Volver'),
                   ),
                 ),
               ),
-            if (puedeCancelar) const SizedBox(width: 10),
-            Expanded(
-              child: SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () => context.pop(),
-                  child: const Text('Volver'),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

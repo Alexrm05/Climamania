@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
+import '../../core/fecha.dart';
 import '../../core/ui_text.dart';
 import '../../data/models/evento.dart';
 import '../../data/models/gestion_item.dart';
 import '../../data/repositories/search_repository.dart';
 import '../../services/session_service.dart';
+import '../../theme/app_colors.dart';
 import '../calendar/event_styles.dart';
 
 enum SearchKind { evento, visita, incidencia }
@@ -23,6 +24,7 @@ class SearchResult {
   final String detailTitle;
   final String navRef;
   final String navCliente;
+  final String navId; // id de visita/incidencia
 
   const SearchResult({
     required this.title,
@@ -36,6 +38,7 @@ class SearchResult {
     required this.detailTitle,
     this.navRef = '',
     this.navCliente = '',
+    this.navId = '',
   });
 }
 
@@ -162,7 +165,7 @@ class EventSearchController extends ChangeNotifier {
       meta: equipo.isNotEmpty ? 'Equipo $equipo' : 'Equipo no asignado',
       metaColor: equipo.isNotEmpty
           ? EventStyles.forEquipo(equipo)
-          : const Color(0xFF757575),
+          : AppColors.textMuted,
       accent: EventStyles.forEvento(e),
       kind: SearchKind.evento,
       canOpen: EventStyles.isPedidoValido(ref),
@@ -199,8 +202,7 @@ class EventSearchController extends ChangeNotifier {
         ? '$tipo · $estadoVisual'
         : '$tipo · $estadoVisual · $fechaVisual';
 
-    final color =
-        esVisita ? const Color(0xFF0F766E) : const Color(0xFFB45309);
+    final color = esVisita ? AppColors.infoFg : AppColors.warningFg;
 
     return SearchResult(
       title: title,
@@ -213,6 +215,7 @@ class EventSearchController extends ChangeNotifier {
       kind: kind,
       canOpen: g.id.isNotEmpty && g.id != 'null' && g.id != '0',
       detailTitle: esVisita ? 'Detalle de visita' : 'Detalle de incidencia',
+      navId: g.id,
     );
   }
 
@@ -225,10 +228,9 @@ class EventSearchController extends ChangeNotifier {
     if (s == null) return start;
     final end = UiText.sanitizeDbValue(endStr);
     final e = end.isEmpty ? null : DateTime.tryParse(end.replaceFirst(' ', 'T'));
-    final fecha = DateFormat('EEE d MMM', 'es').format(s);
-    final inicio = DateFormat('HH:mm').format(s);
-    final rango =
-        e != null ? '$inicio - ${DateFormat('HH:mm').format(e)}' : inicio;
+    final fecha = Fecha.dma(s);
+    final inicio = Fecha.hora(s);
+    final rango = e != null ? '$inicio - ${Fecha.hora(e)}' : inicio;
     return '$fecha · $rango';
   }
 
@@ -254,13 +256,7 @@ class EventSearchController extends ChangeNotifier {
     return '$dir - $pob';
   }
 
-  String _formatServerDate(String rawDate) {
-    final clean = UiText.sanitizeDbValue(rawDate);
-    if (clean.isEmpty) return '';
-    final d = DateTime.tryParse(clean.replaceFirst(' ', 'T'));
-    if (d == null) return clean;
-    return DateFormat('dd/MM/yyyy HH:mm', 'es').format(d);
-  }
+  String _formatServerDate(String rawDate) => Fecha.parse(rawDate);
 
   String _buildContactLine(
       String direccion, String telefono, String whatsapp, String email) {

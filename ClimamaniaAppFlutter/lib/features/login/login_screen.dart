@@ -6,6 +6,8 @@ import '../../data/repositories/auth_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
 import 'login_controller.dart';
 
 /// Pantalla de acceso. Réplica de `activity_login.xml` + `LoginActivity.java`.
@@ -105,16 +107,16 @@ class _LoginViewState extends State<_LoginView> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Logo
                 Padding(
-                  padding: const EdgeInsets.only(top: 12, bottom: 24),
+                  padding: const EdgeInsets.only(top: 8, bottom: 24),
                   child: Image.asset(
                     'assets/images/climamania_logo.png',
-                    height: 140,
+                    height: 104,
                     fit: BoxFit.contain,
                   ),
                 ),
@@ -126,48 +128,67 @@ class _LoginViewState extends State<_LoginView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
+                      Text(
                         'Acceso instaladores',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryDark,
-                        ),
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        'Introduce tus credenciales para continuar.',
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
                       _inputField(
                         controller: _userCtrl,
                         hint: 'Identificador',
+                        leadingIcon: Icons.person_outline,
                         textInputAction: TextInputAction.next,
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: AppSpacing.sm),
                       _passwordField(),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: Checkbox(
-                              value: _remember,
-                              onChanged: (v) =>
-                                  setState(() => _remember = v ?? false),
-                            ),
+                      const SizedBox(height: AppSpacing.sm),
+                      InkWell(
+                        onTap: () =>
+                            setState(() => _remember = !_remember),
+                        borderRadius: AppRadius.brSm,
+                        child: Padding(
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: Checkbox(
+                                  value: _remember,
+                                  onChanged: (v) => setState(
+                                      () => _remember = v ?? false),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Text(
+                                'Recordar usuario',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium,
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Recordar usuario',
-                            style: TextStyle(color: AppColors.checkboxLabel),
-                          ),
-                        ],
+                        ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: AppSpacing.md),
                       // Botón Acceder en su propia línea, a todo el ancho.
                       SizedBox(
                         width: double.infinity,
-                        height: 48,
+                        height: 50,
                         child: ElevatedButton(
                           onPressed: isLoading ? null : _attemptLogin,
+                          style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: AppRadius.brPill)),
                           child: isLoading
                               ? const SizedBox(
                                   width: 20,
@@ -180,27 +201,27 @@ class _LoginViewState extends State<_LoginView> {
                               : const Text('Acceder'),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: OutlinedButton(
+                      const SizedBox(height: AppSpacing.sm),
+                      Center(
+                        child: TextButton(
                           onPressed: isLoading ? null : _clearFields,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primaryDark,
-                            side: const BorderSide(color: AppColors.primary),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5),
-                            ),
+                          child: Text(
+                            'Limpiar campos',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(color: AppColors.textSecondary),
                           ),
-                          child: const Text('Limpiar'),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      const Center(
+                      const SizedBox(height: AppSpacing.xs),
+                      Center(
                         child: Text(
                           '¿Has olvidado la contraseña?',
-                          style: TextStyle(color: AppColors.primaryDark),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: AppColors.textMuted),
                         ),
                       ),
                     ],
@@ -219,27 +240,35 @@ class _LoginViewState extends State<_LoginView> {
     required String hint,
     bool obscure = false,
     Widget? suffix,
+    IconData? leadingIcon,
     TextInputAction? textInputAction,
   }) {
     return Container(
-      height: 48,
+      height: 50,
       decoration: AppDecorations.editText,
-      alignment: Alignment.center,
-      child: TextField(
-        controller: controller,
-        obscureText: obscure,
-        textInputAction: textInputAction,
-        style: const TextStyle(color: AppColors.black),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: Colors.grey),
-          border: InputBorder.none,
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-          suffixIcon: suffix,
-          suffixIconConstraints:
-              const BoxConstraints(minWidth: 48, minHeight: 48),
-        ),
+      padding: const EdgeInsets.only(left: 12),
+      child: Row(
+        children: [
+          if (leadingIcon != null) ...[
+            Icon(leadingIcon, size: 20, color: AppColors.textMuted),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: TextField(
+              controller: controller,
+              obscureText: obscure,
+              textInputAction: textInputAction,
+              style: const TextStyle(color: AppColors.textPrimary),
+              decoration: AppDecorations.bareInput(
+                hintText: hint,
+                suffixIcon: suffix,
+                suffixIconConstraints:
+                    const BoxConstraints(minWidth: 48, minHeight: 48),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -248,6 +277,7 @@ class _LoginViewState extends State<_LoginView> {
     return _inputField(
       controller: _passCtrl,
       hint: 'Contraseña',
+      leadingIcon: Icons.lock_outline,
       obscure: _obscure,
       suffix: GestureDetector(
         onTap: () => setState(() => _obscure = !_obscure),

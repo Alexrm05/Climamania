@@ -3,11 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/widgets/empty_state.dart';
 import '../../data/models/gestion_item.dart';
 import '../../data/repositories/incidencia_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../visitas/widgets/visita_card.dart';
+import '../visitas/widgets/visita_card_skeleton.dart';
 import 'incidencias_pendientes_controller.dart';
 
 /// Lista de incidencias pendientes. Réplica de IncidenciasPendientesActivity.
@@ -68,18 +70,36 @@ class _View extends StatelessWidget {
       body: Consumer<IncidenciasPendientesController>(
         builder: (context, c, _) {
           if (c.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              children: const [
+                VisitaCardSkeleton(),
+                VisitaCardSkeleton(),
+                VisitaCardSkeleton(),
+                VisitaCardSkeleton(),
+              ],
+            );
           }
           if (c.incidencias.isEmpty) {
+            final hasError = c.errorMsg != null;
             return RefreshIndicator(
               onRefresh: c.load,
+              color: AppColors.primary,
               child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  const SizedBox(height: 120),
-                  Center(
-                      child: Text(c.errorMsg ?? 'No tienes incidencias pendientes.',
-                          style:
-                              const TextStyle(color: AppColors.textSecondary))),
+                  SizedBox(height: MediaQuery.sizeOf(context).height * 0.22),
+                  EmptyState(
+                    icon: hasError
+                        ? Icons.cloud_off_outlined
+                        : Icons.report_problem_outlined,
+                    title: hasError
+                        ? c.errorMsg!
+                        : 'No tienes incidencias pendientes',
+                    subtitle: hasError
+                        ? 'Desliza hacia abajo para reintentar.'
+                        : 'Cuando te asignen incidencias aparecerán aquí.',
+                  ),
                 ],
               ),
             );
@@ -95,6 +115,7 @@ class _View extends StatelessWidget {
                     visita: v,
                     estadoLabel: 'Incidencia pendiente',
                     codigo: _codigo(v),
+                    esIncidencia: true,
                     onTap: () => context.push('/incidencia', extra: {'id': v.id}),
                     onMaps: () => _maps(context, v),
                     onCall: () => _call(context, v),

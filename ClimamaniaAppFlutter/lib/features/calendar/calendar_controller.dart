@@ -193,10 +193,10 @@ class CalendarController extends ChangeNotifier {
         date.day == now.day;
   }
 
-  /// Eventos que pasan filtros y caen en la semana mostrada (Lun–Vie).
+  /// Eventos que pasan filtros y caen en la semana mostrada (Lun–Dom).
   List<Evento> get visibleEvents {
     final start = DateTime(weekStart.year, weekStart.month, weekStart.day);
-    final end = start.add(const Duration(days: 5)); // exclusivo (Lun..Vie)
+    final end = start.add(const Duration(days: 7)); // exclusivo (Lun..Dom)
     return _eventos.where((ev) {
       final s = ev.startDate;
       if (s == null) return false;

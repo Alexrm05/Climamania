@@ -16,6 +16,7 @@ import 'data/repositories/search_repository.dart';
 import 'data/repositories/visita_repository.dart';
 import 'services/location_service.dart';
 import 'features/shell/refresh_signal.dart';
+import 'features/shell/tab_history.dart';
 import 'routing/app_router.dart';
 import 'services/session_service.dart';
 import 'theme/app_colors.dart';
@@ -63,6 +64,7 @@ Future<void> main() async {
       Provider<AdicionalesRepository>.value(value: adicionalesRepo),
       Provider<LocationService>.value(value: locationService),
       ChangeNotifierProvider<RefreshSignal>(create: (_) => RefreshSignal()),
+      ChangeNotifierProvider<TabHistory>(create: (_) => TabHistory()),
     ],
     child: ClimaManiaApp(session: session),
   ));
@@ -81,6 +83,21 @@ class ClimaManiaApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.build(),
       routerConfig: router,
+      // Reduce el tamaño de letra de TODA la app un 10%, respetando además el
+      // ajuste de accesibilidad del sistema (se multiplica, no se reemplaza).
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        final base = mq.textScaler.scale(1.0); // factor efectivo del sistema
+        return MediaQuery(
+          data: mq.copyWith(textScaler: TextScaler.linear(base * 0.9)),
+          // Red de seguridad global: tocar fuera de un campo cierra el teclado.
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            child: child!,
+          ),
+        );
+      },
       locale: const Locale('es', 'ES'),
       supportedLocales: const [Locale('es', 'ES'), Locale('es')],
       localizationsDelegates: const [

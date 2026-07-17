@@ -4,10 +4,11 @@ import 'package:provider/provider.dart';
 
 import '../../core/media_picker.dart';
 import '../../core/priority.dart';
+import '../../core/widgets/busy_overlay.dart';
 import '../../data/repositories/visita_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_decorations.dart';
+import 'widgets/gestion_enviar_body.dart';
 
 /// Gestión de una visita: comentarios, fotos/vídeo, prioridad, finalizar/cancelar.
 /// Réplica de VisitaEnviarActivity.
@@ -68,6 +69,7 @@ class _VisitaEnviarScreenState extends State<VisitaEnviarScreen> {
               child: const Text('Cancelar')),
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.confirm),
               child: const Text('Enviar')),
         ],
       ),
@@ -196,85 +198,43 @@ class _VisitaEnviarScreenState extends State<VisitaEnviarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final direccion = [widget.direccion, widget.poblacion]
+        .where((e) => e.isNotEmpty)
+        .join(', ');
     return Scaffold(
       backgroundColor: AppColors.primaryLight,
       appBar: AppBar(title: Text('Gestionar visita #${widget.idVisita}')),
-      body: Stack(
-        children: [
-          ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Container(
-                decoration: AppDecorations.whiteCard,
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (widget.cliente.isNotEmpty)
-                      Text(widget.cliente,
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryDark)),
-                    if (widget.direccion.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                            [widget.direccion, widget.poblacion]
-                                .where((e) => e.isNotEmpty)
-                                .join(', '),
-                            style: const TextStyle(
-                                fontSize: 14, color: Color(0xFF455A64))),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              _bigBtn('Enviar comentarios escritos', Icons.comment, _comentario),
-              const SizedBox(height: 10),
-              _bigBtn('Enviar fotos o vídeos', Icons.photo_camera, _fotos),
-              const SizedBox(height: 10),
-              _bigBtn('Cambiar prioridad de la visita', Icons.flag, _prioridad),
-              const SizedBox(height: 10),
-              _bigBtn('Finalizar / Cancelar visita', Icons.flag_circle, _cerrar,
-                  outlined: true),
-            ],
-          ),
-          if (_busy)
-            const Positioned.fill(
-              child: ColoredBox(
-                color: Color(0x66000000),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            ),
-        ],
+      body: BusyOverlay(
+        busy: _busy,
+        child: GestionEnviarBody(
+          cliente: widget.cliente,
+          direccion: direccion,
+          esIncidencia: false,
+          actions: [
+            GestionEnviarAction(
+                icon: Icons.chat_outlined,
+                label: 'Comentarios',
+                subtitle: 'Añadir nota',
+                onTap: _comentario),
+            GestionEnviarAction(
+                icon: Icons.photo_camera_outlined,
+                label: 'Fotos y vídeos',
+                subtitle: 'Cámara o galería',
+                onTap: _fotos),
+            GestionEnviarAction(
+                icon: Icons.flag_outlined,
+                label: 'Prioridad',
+                subtitle: 'Alta · media · baja',
+                onTap: _prioridad),
+            GestionEnviarAction(
+                icon: Icons.task_alt,
+                label: 'Finalizar',
+                subtitle: 'o cancelar',
+                onTap: _cerrar,
+                danger: true),
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _bigBtn(String label, IconData icon, VoidCallback onTap,
-      {bool outlined = false}) {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: outlined
-          ? OutlinedButton.icon(
-              onPressed: _busy ? null : onTap,
-              icon: Icon(icon, size: 20),
-              label: Text(label),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryDark,
-                side: const BorderSide(color: AppColors.primaryDark),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5)),
-              ),
-            )
-          : ElevatedButton.icon(
-              onPressed: _busy ? null : onTap,
-              icon: Icon(icon, size: 20),
-              label: Text(label),
-              style: ElevatedButton.styleFrom(alignment: Alignment.centerLeft),
-            ),
     );
   }
 }

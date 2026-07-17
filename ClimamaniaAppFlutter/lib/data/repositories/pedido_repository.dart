@@ -44,4 +44,26 @@ class PedidoRepository {
       return (false, 'Error de conexión al guardar el comentario');
     }
   }
+
+  /// Elimina un comentario del instalador (eliminar_comentario.php).
+  Future<(bool, String)> eliminarComentario({
+    required String referencia,
+    required String id,
+    required String rol,
+    required String usuario,
+  }) async {
+    try {
+      final json = await _api.postForm(AppConfig.eliminarComentario, {
+        'referencia': referencia,
+        'id': id,
+        'rol': rol,
+        'usuario': usuario,
+      });
+      final ok = json['success'] == true;
+      final msg = UiText.sanitizeDbValue(json['message']?.toString());
+      return (ok, msg);
+    } catch (_) {
+      return (false, 'Error de conexión al eliminar el comentario');
+    }
+  }
 }

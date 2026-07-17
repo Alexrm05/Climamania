@@ -3,12 +3,14 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/widgets/empty_state.dart';
 import '../../data/models/gestion_item.dart';
 import '../../data/repositories/visita_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import 'visitas_pendientes_controller.dart';
 import 'widgets/visita_card.dart';
+import 'widgets/visita_card_skeleton.dart';
 
 /// Lista de visitas pendientes. Réplica de VisitasPendientesActivity.
 class VisitasPendientesScreen extends StatelessWidget {
@@ -72,19 +74,34 @@ class _VisitasPendientesView extends StatelessWidget {
       body: Consumer<VisitasPendientesController>(
         builder: (context, c, _) {
           if (c.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              children: const [
+                VisitaCardSkeleton(),
+                VisitaCardSkeleton(),
+                VisitaCardSkeleton(),
+                VisitaCardSkeleton(),
+              ],
+            );
           }
           if (c.visitas.isEmpty) {
+            final hasError = c.errorMsg != null;
             return RefreshIndicator(
               onRefresh: c.load,
+              color: AppColors.primary,
               child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  const SizedBox(height: 120),
-                  Center(
-                    child: Text(
-                      c.errorMsg ?? 'No tienes visitas pendientes.',
-                      style: const TextStyle(color: AppColors.textSecondary),
-                    ),
+                  SizedBox(height: MediaQuery.sizeOf(context).height * 0.22),
+                  EmptyState(
+                    icon: hasError
+                        ? Icons.cloud_off_outlined
+                        : Icons.event_available_outlined,
+                    title:
+                        hasError ? c.errorMsg! : 'No tienes visitas pendientes',
+                    subtitle: hasError
+                        ? 'Desliza hacia abajo para reintentar.'
+                        : 'Cuando te asignen visitas aparecerán aquí.',
                   ),
                 ],
               ),
@@ -96,11 +113,13 @@ class _VisitasPendientesView extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 8),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: Text('Ordenadas por prioridad y fecha de solicitud',
-                      style: TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary)),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: AppColors.textMuted)),
                 ),
                 for (final v in c.visitas)
                   VisitaCard(

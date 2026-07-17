@@ -71,10 +71,12 @@ class DetalleLinea {
 
 /// Comentario del instalador.
 class ComentarioInstalador {
+  final String id;
   final String fecha;
   final String usuario;
   final String texto;
   const ComentarioInstalador({
+    this.id = '',
     required this.fecha,
     required this.usuario,
     required this.texto,
@@ -82,6 +84,7 @@ class ComentarioInstalador {
 
   factory ComentarioInstalador.fromJson(Map<String, dynamic> j) =>
       ComentarioInstalador(
+        id: UiText.sanitizeDbValue(j['id']?.toString()),
         fecha: UiText.sanitizeDbValue(j['Fecha']?.toString()),
         usuario: UiText.sanitizeDbValue(j['Usuario']?.toString()),
         texto: UiText.sanitizeDbValue(j['Texto']?.toString()),

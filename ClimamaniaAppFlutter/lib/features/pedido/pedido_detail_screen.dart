@@ -3,12 +3,23 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/widgets/status_badge.dart';
+import '../../data/models/gestion_item.dart';
 import '../../data/models/pedido.dart';
 import '../../data/repositories/pedido_repository.dart';
+import '../../data/repositories/search_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
+import '../visitas/widgets/visita_card.dart';
 import 'pedido_controller.dart';
+
+String _titleCase(String s) => s
+    .split(RegExp(r'\s+'))
+    .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1).toLowerCase())
+    .join(' ');
 
 /// Detalle del pedido. Réplica de PedidoDetailActivity + content_pedido_detail.
 class PedidoDetailScreen extends StatelessWidget {
@@ -26,6 +37,7 @@ class PedidoDetailScreen extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (ctx) => PedidoController(
         ctx.read<PedidoRepository>(),
+        ctx.read<SearchRepository>(),
         ctx.read<SessionService>(),
         referencia: referencia,
         clienteHint: clienteHint,
@@ -98,15 +110,19 @@ class _PedidoViewState extends State<_PedidoView> {
   }
 
   Future<void> _guardarComentario(PedidoController c) async {
+    FocusScope.of(context).unfocus(); // cerrar el teclado al enviar
     final (ok, message) = await c.addComentario(_comentarioCtrl.text);
     if (ok) _comentarioCtrl.clear();
-    _msg(message);
+    if (mounted) _msg(message);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primaryLight,
+      // La barra inferior (Realizar instalación / Volver) queda SIEMPRE fija
+      // abajo, sin subir cuando se abre el teclado.
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('Ficha del pedido')),
       body: Consumer<PedidoController>(
         builder: (context, c, _) {
@@ -134,9 +150,13 @@ class _PedidoViewState extends State<_PedidoView> {
 
   Widget _content(PedidoController c) {
     return ListView(
-      padding: const EdgeInsets.all(18),
+      // Margen inferior extra igual a la altura del teclado, para poder subir
+      // el campo de comentario por encima de él (la barra de botones no se mueve).
+      padding: EdgeInsets.fromLTRB(
+          18, 18, 18, 18 + MediaQuery.of(context).viewInsets.bottom),
       children: [
         _hero(c),
+        _visitasPreviasSection(c),
         if (c.equipoTexto.isNotEmpty)
           _section('Equipo asignado', _bodyText(c.equipoTexto)),
         if (c.detalleLineas.isNotEmpty)
@@ -150,118 +170,287 @@ class _PedidoViewState extends State<_PedidoView> {
   }
 
   Widget _hero(PedidoController c) {
+    final t = Theme.of(context).textTheme;
+    final cliente =
+        c.cliente.isNotEmpty ? _titleCase(c.cliente) : 'Pedido ${c.referencia}';
     return Container(
-      decoration: AppDecorations.detailHero,
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      decoration: AppDecorations.whiteCard,
+      child: ClipRRect(
+        borderRadius: AppRadius.brLg,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Ficha completa',
-                        style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF6D4C41))),
-                    const SizedBox(height: 8),
-                    Text(c.referencia,
-                        style: const TextStyle(
-                            fontSize: 34,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary)),
-                    if (c.cliente.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(c.cliente,
-                            style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primaryDark)),
-                      ),
-                  ],
-                ),
+              // Cabecera: badge + Nº
+              Row(
+                children: [
+                  const StatusBadge('Pedido',
+                      tone: BadgeTone.brand,
+                      icon: Icons.receipt_long_rounded),
+                  const Spacer(),
+                  if (c.referencia.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: AppDecorations.chipLight,
+                      child: Text('Nº ${c.referencia}',
+                          style: t.labelMedium
+                              ?.copyWith(color: AppColors.textSecondary)),
+                    ),
+                ],
               ),
-              if (c.fechaHora.isNotEmpty)
-                Container(
-                  decoration: AppDecorations.chipLight,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  child: Text(c.fechaHora,
-                      style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryDark)),
-                ),
+              const SizedBox(height: AppSpacing.lg),
+              // Identidad: azulejo + cliente + fecha
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.footerActiveBg,
+                      borderRadius: AppRadius.brMd,
+                      border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.22),
+                          width: 1.5),
+                    ),
+                    child: const Icon(Icons.hvac,
+                        color: AppColors.primary, size: 24),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(cliente,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: t.headlineSmall),
+                        if (c.fechaHora.isNotEmpty) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            children: [
+                              const Icon(Icons.schedule,
+                                  size: 15, color: AppColors.textMuted),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(c.fechaHora,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: t.titleSmall?.copyWith(
+                                        color: AppColors.textSecondary)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Container(
+                  height: 1, width: double.infinity, color: AppColors.border),
+              const SizedBox(height: AppSpacing.md),
+              // Dirección + acciones (mismo lenguaje que la tarjeta de Inicio)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                        color: AppColors.surfaceWarm,
+                        borderRadius: AppRadius.brMd),
+                    child: const Center(
+                        child: Icon(Icons.place,
+                            size: 20, color: AppColors.textSecondary)),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      c.direccion.isNotEmpty
+                          ? c.direccion
+                          : 'Dirección no disponible',
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: c.direccion.isNotEmpty
+                          ? t.titleSmall?.copyWith(color: AppColors.textPrimary)
+                          : t.bodyMedium?.copyWith(
+                              color: AppColors.textMuted,
+                              fontStyle: FontStyle.italic),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                      child: _actionPill(Icons.place, 'Maps',
+                          () => _openMaps(c.direccion),
+                          primary: true)),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                      child: _actionPill(Icons.call, 'Llamar',
+                          () => _call(c.telefonoPrincipal),
+                          primary: false)),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                      child: _actionPill(Icons.chat, 'Mensaje',
+                          () => _whatsapp(c.telefonoPrincipal),
+                          primary: false)),
+                ],
+              ),
             ],
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 18),
-            child: Divider(height: 1, color: Color(0xFFF2D9C2)),
+        ),
+      ),
+    );
+  }
+
+  Widget _actionPill(IconData icon, String label, VoidCallback onTap,
+      {required bool primary}) {
+    final t = Theme.of(context).textTheme;
+    final Color fg = primary ? AppColors.white : AppColors.warningFg;
+    final content = SizedBox(
+      height: 44,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 16, color: fg),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: t.labelLarge?.copyWith(color: fg)),
           ),
-          const Text('Dirección de instalación',
-              style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryDark)),
-          const SizedBox(height: 12),
-          _contactRow(
-            value: c.direccion.isNotEmpty ? c.direccion : 'Dirección no disponible',
-            valueStyle: const TextStyle(
-                fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF263238)),
-            icon: Icons.map,
-            onTap: () => _openMaps(c.direccion),
-          ),
-          const SizedBox(height: 10),
-          _contactRow(
-            value: c.telefonoPrincipal.isNotEmpty
-                ? c.telefonoPrincipal
-                : 'Teléfono no disponible',
-            valueStyle: const TextStyle(
-                fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF37474F)),
-            icon: Icons.call,
-            onTap: () => _call(c.telefonoPrincipal),
-          ),
-          const SizedBox(height: 10),
-          _contactRow(
-            value: c.telefonoPrincipal.isNotEmpty
-                ? c.telefonoPrincipal
-                : 'WhatsApp no disponible',
-            valueStyle: const TextStyle(
-                fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF37474F)),
-            icon: Icons.send,
-            onTap: () => _whatsapp(c.telefonoPrincipal),
-          ),
+        ],
+      ),
+    );
+    if (primary) {
+      return Material(
+        color: AppColors.primary,
+        borderRadius: AppRadius.brPill,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+            onTap: onTap, borderRadius: AppRadius.brPill, child: content),
+      );
+    }
+    return Material(
+      color: AppColors.footerActiveBg,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.brPill,
+        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.25)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: RoundedRectangleBorder(borderRadius: AppRadius.brPill),
+        child: content,
+      ),
+    );
+  }
+
+  /// Sección "Visitas previas": botón para verlas si hay, o aviso si no.
+  Widget _visitasPreviasSection(PedidoController c) {
+    if (c.visitasPreviasLoading) {
+      return _section(
+        'Visitas previas',
+        Row(children: const [
+          SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2)),
+          SizedBox(width: 10),
+          Text('Buscando visitas previas...',
+              style: TextStyle(fontSize: 15, color: AppColors.textPrimary)),
+        ]),
+      );
+    }
+    if (!c.visitasPreviasChecked) return const SizedBox.shrink();
+    if (c.visitasPrevias.isEmpty) {
+      return _section('Visitas previas', _bodyText('NO HA HABIDO NINGUNA VISITA'));
+    }
+    // Lista directamente en el detalle (cada visita abre su ficha al tocar).
+    return _section(
+      'Visitas previas',
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < c.visitasPrevias.length; i++) ...[
+            if (i > 0) const Divider(height: 18),
+            _visitaPreviaRow(c.visitasPrevias[i]),
+          ],
         ],
       ),
     );
   }
 
-  Widget _contactRow({
-    required String value,
-    required TextStyle valueStyle,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      decoration: AppDecorations.addressHighlight,
-      padding: const EdgeInsets.all(10),
+  Widget _visitaPreviaRow(GestionItem v) {
+    final fecha = VisitaCard.fechaCorta(
+        v.fechaResolucion.isNotEmpty ? v.fechaResolucion : v.fechaSolicitud);
+    final dir = [
+      if (v.direccion.isNotEmpty) v.direccion,
+      if (v.poblacion.isNotEmpty) v.poblacion,
+    ].join(', ');
+    // Solo información (no navega a "Gestionar visita").
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: Text(value, style: valueStyle)),
-          const SizedBox(width: 8),
-          InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(50),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: AppDecorations.chipLight,
-              child: Icon(icon, size: 20, color: AppColors.primaryDark),
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Icons.history, size: 18, color: AppColors.primary),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Visita #${v.id}${fecha.isEmpty ? '' : ' · $fecha'}',
+                  style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryDark),
+                ),
+                if (v.cliente.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(v.cliente,
+                        style: const TextStyle(
+                            fontSize: 14, color: AppColors.textPrimary)),
+                  ),
+                if (dir.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(dir,
+                        style: const TextStyle(
+                            fontSize: 13, color: AppColors.textSecondary)),
+                  ),
+                if (v.telefono.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text('Tel. ${v.telefono}',
+                        style: const TextStyle(
+                            fontSize: 13, color: AppColors.textSecondary)),
+                  ),
+                if (v.estado.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text('Estado: ${v.estado}',
+                        style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                            fontStyle: FontStyle.italic)),
+                  ),
+              ],
             ),
           ),
         ],
@@ -271,30 +460,38 @@ class _PedidoViewState extends State<_PedidoView> {
 
   Widget _section(String title, Widget child) {
     return Padding(
-      padding: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.only(top: AppSpacing.md),
       child: Container(
         width: double.infinity,
         decoration: AppDecorations.whiteCard,
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryDark)),
-            const SizedBox(height: 10),
-            child,
-          ],
+        child: ClipRRect(
+          borderRadius: AppRadius.brLg,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Builder(
+                    builder: (context) => Text(title,
+                        style: Theme.of(context).textTheme.titleMedium)),
+                const SizedBox(height: AppSpacing.md),
+                child,
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _bodyText(String text) => Text(
-        text,
-        style: const TextStyle(fontSize: 16, color: Color(0xFF424242), height: 1.4),
+  Widget _bodyText(String text) => Builder(
+        builder: (context) => Text(
+          text,
+          style: Theme.of(context)
+              .textTheme
+              .bodyLarge
+              ?.copyWith(color: AppColors.textPrimary, height: 1.4),
+        ),
       );
 
   Widget _detalleTable(List<DetalleLinea> lineas) {
@@ -302,7 +499,7 @@ class _PedidoViewState extends State<_PedidoView> {
       final style = TextStyle(
         fontSize: header ? 13 : 14,
         fontWeight: header ? FontWeight.bold : FontWeight.normal,
-        color: header ? AppColors.primaryDark : const Color(0xFF424242),
+        color: header ? AppColors.primaryDark : AppColors.textPrimary,
       );
       return Container(
         color: header ? AppColors.primaryLight : null,
@@ -326,13 +523,88 @@ class _PedidoViewState extends State<_PedidoView> {
     );
   }
 
+  Future<void> _eliminarComentario(
+      PedidoController c, ComentarioInstalador com) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar comentario'),
+        content: const Text('¿Seguro que quieres eliminar este comentario?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.logoutRed),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    final (ok, msg) = await c.eliminarComentario(com);
+    if (mounted) _msg(msg);
+  }
+
+  Widget _comentarioItem(PedidoController c, ComentarioInstalador com) {
+    final meta = [
+      c.fechaComentario(com),
+      if (com.usuario.isNotEmpty) com.usuario,
+    ].where((e) => e.isNotEmpty).join(' · ');
+    final borrando = c.deletingComentarioId == com.id && com.id.isNotEmpty;
+    final puedeEliminar = c.puedeEliminar(com);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (meta.isNotEmpty)
+                  Text(meta,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textSecondary)),
+                Text(com.texto,
+                    style: const TextStyle(
+                        fontSize: 15, color: AppColors.textPrimary, height: 1.3)),
+              ],
+            ),
+          ),
+          if (borrando)
+            const Padding(
+              padding: EdgeInsets.only(left: 8, top: 4),
+              child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+          else if (puedeEliminar)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: AppColors.logoutRed),
+              tooltip: 'Eliminar comentario',
+              // Los recién añadidos aún no tienen id (se sincroniza en segundos).
+              onPressed: com.id.isEmpty
+                  ? null
+                  : () => _eliminarComentario(c, com),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _comentarios(PedidoController c) {
+    final coments = c.comentarios;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (c.comentariosTexto.isNotEmpty) ...[
-          _bodyText(c.comentariosTexto),
-          const SizedBox(height: 12),
+        if (coments.isNotEmpty) ...[
+          for (final com in coments) _comentarioItem(c, com),
+          const Divider(height: 20),
         ],
         Container(
           decoration: AppDecorations.editText,
@@ -341,11 +613,10 @@ class _PedidoViewState extends State<_PedidoView> {
             controller: _comentarioCtrl,
             minLines: 3,
             maxLines: 6,
-            style: const TextStyle(fontSize: 15, color: Color(0xFF424242)),
-            decoration: const InputDecoration(
+            style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
+            decoration: AppDecorations.bareInput(
               hintText: 'Añadir comentario...',
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
             ),
           ),
         ),
@@ -356,6 +627,7 @@ class _PedidoViewState extends State<_PedidoView> {
           child: ElevatedButton(
             onPressed:
                 c.savingComentario ? null : () => _guardarComentario(c),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.confirm),
             child: c.savingComentario
                 ? const SizedBox(
                     width: 18,
@@ -378,11 +650,13 @@ class _PedidoViewState extends State<_PedidoView> {
             style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF616161))),
+                color: AppColors.textSecondary)),
         const SizedBox(height: 4),
         Text(
-          n > 0 ? '$n foto${n == 1 ? '' : 's'} disponibles' : 'Sin fotos',
-          style: const TextStyle(fontSize: 15, color: Color(0xFF424242)),
+          n > 0
+              ? '$n foto${n == 1 ? '' : 's'} disponible${n == 1 ? '' : 's'}'
+              : 'Sin fotos',
+          style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -392,8 +666,9 @@ class _PedidoViewState extends State<_PedidoView> {
             onPressed: () => context.push('/fotos', extra: {
               'titulo': 'Fotos del cliente',
               'referencia': c.referencia,
-              'categoria': 'cliente',
-              'clave': 'FOTOCLI',
+              // El cliente sube sus fotos como PREINST ("previas").
+              'categoria': 'previas',
+              'clave': 'PREINST',
             }),
             child: const Text('Ver fotos del cliente'),
           ),
@@ -403,43 +678,55 @@ class _PedidoViewState extends State<_PedidoView> {
   }
 
   Widget _bottomActions() {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-        child: Row(
-          children: [
-            Expanded(
-              child: SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () {
-                    final c = context.read<PedidoController>();
-                    context.push('/install', extra: {
-                      'referencia': c.referencia,
-                      'cliente': c.cliente,
-                    });
-                  },
-                  child: const Text('Realizar instalación'),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: SizedBox(
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
+          child: Row(
+            children: [
+              SizedBox(
                 height: 52,
                 child: OutlinedButton(
                   onPressed: () => context.pop(),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primaryDark,
-                    side: const BorderSide(color: AppColors.primaryDark),
+                    foregroundColor: AppColors.textSecondary,
+                    side: const BorderSide(color: AppColors.borderStrong),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(5)),
+                        borderRadius: AppRadius.brPill),
+                    padding: const EdgeInsets.symmetric(horizontal: 22),
                   ),
                   child: const Text('Volver'),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final c = context.read<PedidoController>();
+                      context.push('/install', extra: {
+                        'referencia': c.referencia,
+                        'cliente': c.cliente,
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.brPill),
+                    ),
+                    icon: const Icon(Icons.handyman_outlined, size: 20),
+                    label: const Text('Realizar instalación'),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,94 +1,122 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
+import 'app_radius.dart';
+import 'app_shadows.dart';
 
-/// Decoraciones reutilizables que reproducen los `shape drawables` de Android
-/// (bg_login_card, bg_edittext, bg_detail_hero, etc.) para fidelidad 1:1.
+/// Decoraciones reutilizables. Se conservan los nombres públicos para que los
+/// call-sites existentes mejoren solos; los internos usan los tokens del
+/// refresh (radios, sombras y colores secundarios cálidos).
 class AppDecorations {
   AppDecorations._();
 
-  /// bg_login_card: blanco, radio 12, borde 1dp #F1F1F1.
+  /// Tarjeta de login: blanca, radio lg, borde sutil + sombra suave.
   static BoxDecoration loginCard = BoxDecoration(
-    color: AppColors.white,
-    borderRadius: BorderRadius.circular(12),
-    border: Border.all(color: AppColors.primaryLight, width: 1),
-    boxShadow: const [
-      BoxShadow(color: Color(0x1A000000), blurRadius: 8, offset: Offset(0, 2)),
-    ],
+    color: AppColors.surface,
+    borderRadius: AppRadius.brLg,
+    border: Border.all(color: AppColors.border, width: 1),
+    boxShadow: AppShadows.card,
   );
 
-  /// bg_edittext: blanco, radio 6, borde 1dp #F1F1F1.
+  /// Campo de texto: blanco, radio sm, borde sutil.
   static BoxDecoration editText = BoxDecoration(
-    color: AppColors.white,
-    borderRadius: BorderRadius.circular(6),
-    border: Border.all(color: AppColors.primaryLight, width: 1),
+    color: AppColors.surface,
+    borderRadius: AppRadius.brSm,
+    border: Border.all(color: AppColors.border, width: 1),
   );
 
-  /// bg_detail_hero: degradado #FFF9F2 → #FFFFFF, borde 1dp #F2E6DA, radio 18.
+  /// `InputDecoration` para un [TextField] que va DENTRO de un
+  /// `Container(editText)`: sin borde ni relleno propios (los aporta el
+  /// contenedor), evitando el doble borde que añadiría el tema global.
+  /// Fuente única para todos los campos de la app.
+  static InputDecoration bareInput({
+    String? hintText,
+    String? labelText,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+    BoxConstraints? prefixIconConstraints,
+    BoxConstraints? suffixIconConstraints,
+    EdgeInsetsGeometry contentPadding =
+        const EdgeInsets.symmetric(horizontal: 10),
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      labelText: labelText,
+      hintStyle: const TextStyle(color: AppColors.textMuted),
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      prefixIconConstraints: prefixIconConstraints,
+      suffixIconConstraints: suffixIconConstraints,
+      filled: false,
+      isDense: true,
+      border: InputBorder.none,
+      enabledBorder: InputBorder.none,
+      focusedBorder: InputBorder.none,
+      errorBorder: InputBorder.none,
+      focusedErrorBorder: InputBorder.none,
+      disabledBorder: InputBorder.none,
+      contentPadding: contentPadding,
+    );
+  }
+
+  /// Hero: fondo plano cálido (sin degradado), radio lg, borde sutil.
   static BoxDecoration detailHero = BoxDecoration(
-    gradient: const LinearGradient(
-      begin: Alignment.bottomLeft,
-      end: Alignment.topRight,
-      colors: [AppColors.heroGradientStart, AppColors.heroGradientEnd],
-    ),
-    borderRadius: BorderRadius.circular(18),
-    border: Border.all(color: AppColors.heroStroke, width: 1),
+    color: AppColors.surfaceWarm,
+    borderRadius: AppRadius.brLg,
+    border: Border.all(color: AppColors.border, width: 1),
   );
 
-  /// MaterialCardView blanco: radio 18, borde 1dp #EFE2D6, elevación 3.
+  /// Tarjeta blanca: radio lg, borde muy sutil + sombra suave.
   static BoxDecoration whiteCard = BoxDecoration(
-    color: AppColors.white,
-    borderRadius: BorderRadius.circular(18),
-    border: Border.all(color: AppColors.cardStroke, width: 1),
-    boxShadow: const [
-      BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2)),
-    ],
+    color: AppColors.surface,
+    borderRadius: AppRadius.brLg,
+    border: Border.all(color: AppColors.border, width: 1),
+    boxShadow: AppShadows.card,
   );
 
-  /// bg_address_highlight: #FFFDF9, borde 1dp #F2D9C2, radio 12.
+  /// Resaltado de dirección: fondo cálido, borde sutil, radio md.
   static BoxDecoration addressHighlight = BoxDecoration(
-    color: AppColors.addressBg,
-    borderRadius: BorderRadius.circular(12),
-    border: Border.all(color: AppColors.addressStroke, width: 1),
+    color: AppColors.surfaceWarm,
+    borderRadius: AppRadius.brMd,
+    border: Border.all(color: AppColors.border, width: 1),
   );
 
-  /// bg_chip_light: #FFF8F1, borde 1dp #E7C6A6, pastilla.
+  /// Chip claro (meta): fondo cálido, pastilla.
   static BoxDecoration chipLight = BoxDecoration(
-    color: AppColors.chipBg,
-    borderRadius: BorderRadius.circular(50),
-    border: Border.all(color: AppColors.chipStroke, width: 1),
+    color: AppColors.surfaceWarm,
+    borderRadius: AppRadius.brPill,
+    border: Border.all(color: AppColors.border, width: 1),
   );
 
-  /// bg_section_label_green: #E9F7EC, borde 1dp #4CAF50, pastilla.
+  /// Etiqueta verde ("Instalación en curso"): tinte de éxito, pastilla.
   static BoxDecoration sectionLabelGreen = BoxDecoration(
-    color: AppColors.sectionGreenBg,
-    borderRadius: BorderRadius.circular(999),
-    border: Border.all(color: AppColors.sectionGreenStroke, width: 1),
+    color: AppColors.successTint,
+    borderRadius: AppRadius.brPill,
   );
 
-  /// bg_footer_bar: #FAFAFA, borde 1dp #E6E6E6, esquinas superiores 18.
+  /// Barra inferior: fondo claro, hairline superior, esquinas superiores lg.
   static BoxDecoration footerBar = const BoxDecoration(
     color: AppColors.footerBarBg,
     borderRadius: BorderRadius.only(
-      topLeft: Radius.circular(18),
-      topRight: Radius.circular(18),
+      topLeft: Radius.circular(AppRadius.lg),
+      topRight: Radius.circular(AppRadius.lg),
     ),
-    border: Border(top: BorderSide(color: AppColors.footerBarStroke, width: 1)),
+    border: Border(top: BorderSide(color: AppColors.border, width: 1)),
   );
 
-  /// bg_footer_item_active: #FFF1E3, radio 18.
+  /// Item activo de la barra inferior: tinte naranja, radio md.
   static BoxDecoration footerItemActive = BoxDecoration(
     color: AppColors.footerActiveBg,
-    borderRadius: BorderRadius.circular(18),
+    borderRadius: AppRadius.brMd,
   );
 
-  /// Estilo de botón naranja con radio configurable (Maps/Llamar/Mensaje, Buscar).
-  static ButtonStyle orangeButton({double radius = 5, double fontSize = 12}) {
+  /// Estilo de botón naranja (compat). Prefiere `AppButton` para nuevo código.
+  static ButtonStyle orangeButton({double radius = AppRadius.sm, double fontSize = 13}) {
     return ElevatedButton.styleFrom(
       backgroundColor: AppColors.primary,
       foregroundColor: AppColors.white,
       elevation: 0,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      minimumSize: const Size(0, 40),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      minimumSize: const Size(0, 44),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
       textStyle: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
     );

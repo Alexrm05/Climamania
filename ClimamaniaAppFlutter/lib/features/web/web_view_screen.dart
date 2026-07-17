@@ -76,7 +76,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         if (_loading)
           const LinearProgressIndicator(
             color: AppColors.primary,
-            backgroundColor: Color(0x22000000),
+            backgroundColor: AppColors.border,
           ),
       ],
     );

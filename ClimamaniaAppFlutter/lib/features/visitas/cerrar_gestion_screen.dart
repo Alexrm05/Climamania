@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/widgets/busy_overlay.dart';
 import '../../data/repositories/incidencia_repository.dart';
 import '../../data/repositories/visita_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
+import 'widgets/gestion_enviar_body.dart';
 
 /// Finalizar o cancelar una visita/incidencia. Réplica de CerrarGestionActivity.
 class CerrarGestionScreen extends StatefulWidget {
@@ -62,6 +66,7 @@ class _CerrarGestionScreenState extends State<CerrarGestionScreen> {
       _msg('Describe cómo se ha resuelto la incidencia');
       return;
     }
+    FocusScope.of(context).unfocus(); // cerrar el teclado al enviar
     setState(() => _busy = true);
     final session = context.read<SessionService>();
     final rol = session.rol;
@@ -102,108 +107,118 @@ class _CerrarGestionScreenState extends State<CerrarGestionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final direccion = [widget.direccion, widget.poblacion]
+        .where((e) => e.isNotEmpty)
+        .join(', ');
     return Scaffold(
       backgroundColor: AppColors.primaryLight,
       appBar: AppBar(title: Text('Finalizar $_caso')),
-      body: Stack(
-        children: [
-          ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              if (widget.cliente.isNotEmpty || widget.direccion.isNotEmpty)
-                Container(
-                  decoration: AppDecorations.whiteCard,
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (widget.cliente.isNotEmpty)
-                        Text(widget.cliente,
-                            style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primaryDark)),
-                      if (widget.direccion.isNotEmpty)
-                        Text(
-                            [widget.direccion, widget.poblacion]
-                                .where((e) => e.isNotEmpty)
-                                .join(', '),
-                            style: const TextStyle(
-                                fontSize: 14, color: Color(0xFF455A64))),
-                    ],
-                  ),
-                ),
-              const SizedBox(height: 14),
-              // Finalizar
-              _card(
-                'Finalizar $_caso',
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'La $_caso se marcará como resuelta.',
-                      style: const TextStyle(color: Color(0xFF455A64)),
-                    ),
-                    if (_esIncidencia) ...[
-                      const SizedBox(height: 10),
-                      const Text('Resumen de la actuación',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 6),
-                      _field(_resumenCtrl,
-                          'Describe brevemente cómo se ha resuelto...'),
-                    ],
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 46,
-                      child: ElevatedButton(
-                        onPressed: _busy ? null : () => _enviar('finalizar'),
-                        child: Text('Finalizar $_caso'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Cancelar
-              _card(
-                'Cancelar $_caso',
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Es obligatorio indicar el motivo de la cancelación.',
-                      style: TextStyle(color: Color(0xFF455A64)),
-                    ),
-                    const SizedBox(height: 10),
-                    _field(_motivoCtrl, 'Motivo de la cancelación...'),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 46,
-                      child: OutlinedButton(
-                        onPressed: _busy ? null : () => _enviar('cancelar'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFB00020),
-                          side: const BorderSide(color: Color(0xFFB00020)),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5)),
-                        ),
-                        child: Text('Cancelar $_caso'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      body: BusyOverlay(
+        busy: _busy,
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: [
+            if (widget.cliente.isNotEmpty || widget.direccion.isNotEmpty) ...[
+              GestionHeaderCard(
+                  cliente: widget.cliente,
+                  direccion: direccion,
+                  esIncidencia: _esIncidencia),
+              const SizedBox(height: AppSpacing.md),
             ],
-          ),
-          if (_busy)
-            const Positioned.fill(
-              child: ColoredBox(
-                color: Color(0x66000000),
-                child: Center(child: CircularProgressIndicator()),
+            // Finalizar
+            _card(
+              context,
+              icon: Icons.task_alt,
+              tone: AppColors.successFg,
+              tint: AppColors.successTint,
+              title: 'Finalizar $_caso',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('La $_caso se marcará como resuelta.',
+                      style:
+                          t.bodyMedium?.copyWith(color: AppColors.textSecondary)),
+                  if (_esIncidencia) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    Text('Resumen de la actuación', style: t.titleSmall),
+                    const SizedBox(height: AppSpacing.xs),
+                    _field(_resumenCtrl,
+                        'Describe brevemente cómo se ha resuelto...'),
+                  ],
+                  const SizedBox(height: AppSpacing.md),
+                  _submit('Finalizar $_caso', AppColors.successFg,
+                      () => _enviar('finalizar')),
+                ],
               ),
             ),
-        ],
+            // Cancelar
+            _card(
+              context,
+              icon: Icons.cancel_outlined,
+              tone: AppColors.errorFg,
+              tint: AppColors.errorTint,
+              title: 'Cancelar $_caso',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Es obligatorio indicar el motivo de la cancelación.',
+                      style:
+                          t.bodyMedium?.copyWith(color: AppColors.textSecondary)),
+                  const SizedBox(height: AppSpacing.md),
+                  _field(_motivoCtrl, 'Motivo de la cancelación...'),
+                  const SizedBox(height: AppSpacing.md),
+                  _submit('Cancelar $_caso', AppColors.errorFg,
+                      () => _enviar('cancelar'),
+                      outlined: true),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _submit(String label, Color color, VoidCallback onTap,
+      {bool outlined = false}) {
+    final content = SizedBox(
+      height: 48,
+      child: Center(
+        child: Text(label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: outlined ? color : AppColors.white)),
+      ),
+    );
+    if (outlined) {
+      return SizedBox(
+        width: double.infinity,
+        child: Material(
+          color: color.withValues(alpha: 0.06),
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.brPill,
+            side: BorderSide(color: color.withValues(alpha: 0.55)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: _busy ? null : onTap,
+            customBorder:
+                RoundedRectangleBorder(borderRadius: AppRadius.brPill),
+            child: content,
+          ),
+        ),
+      );
+    }
+    return SizedBox(
+      width: double.infinity,
+      child: Material(
+        color: color,
+        borderRadius: AppRadius.brPill,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+            onTap: _busy ? null : onTap,
+            borderRadius: AppRadius.brPill,
+            child: content),
       ),
     );
   }
@@ -216,32 +231,52 @@ class _CerrarGestionScreenState extends State<CerrarGestionScreen> {
         controller: ctrl,
         minLines: 2,
         maxLines: 5,
-        decoration: InputDecoration(
-            hintText: hint,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 10)),
+        decoration: AppDecorations.bareInput(
+          hintText: hint,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        ),
       ),
     );
   }
 
-  Widget _card(String title, Widget child) {
+  Widget _card(BuildContext context,
+      {required IconData icon,
+      required Color tone,
+      required Color tint,
+      required String title,
+      required Widget child}) {
+    final t = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Container(
         width: double.infinity,
         decoration: AppDecorations.whiteCard,
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryDark)),
-            const SizedBox(height: 10),
-            child,
-          ],
+        child: ClipRRect(
+          borderRadius: AppRadius.brLg,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                          color: tint, borderRadius: AppRadius.brMd),
+                      child: Icon(icon, color: tone, size: 20),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(child: Text(title, style: t.titleMedium)),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                child,
+              ],
+            ),
+          ),
         ),
       ),
     );

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import '../../core/ui_text.dart';
 import '../../data/models/evento.dart';
 
-/// Días visibles (Lun–Vie) y franjas horarias (8:00–20:00), igual que Android.
-const List<String> kDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'];
+/// Días visibles (Lun–Dom) y franjas horarias (08h–20h).
+const List<String> kDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const List<String> kHours = [
-  '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00',
-  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00',
+  '08h', '09h', '10h', '11h', '12h', '13h', '14h',
+  '15h', '16h', '17h', '18h', '19h', '20h',
 ];
 
 /// Colores y reglas de los eventos del calendario (port de CalendarActivity).
@@ -45,6 +45,22 @@ class EventStyles {
 
   static Color bgForEvento(Evento ev, {int alpha = 80}) =>
       forEvento(ev).withAlpha(alpha);
+
+  /// Versión legible de un color de equipo para usarlo como texto, franja o
+  /// borde sobre el fondo claro de la tarjeta: oscurece los colores demasiado
+  /// claros (amarillo, cian, verde claro…) para que siempre contrasten.
+  static Color readable(Color c) {
+    final hsl = HSLColor.fromColor(c);
+    // Oscurece los colores claros para que contrasten sobre fondo claro.
+    final lightness = hsl.lightness > 0.40 ? 0.36 : hsl.lightness;
+    // Sube la saturación de colores lavados para que el color se distinga bien.
+    final saturation = hsl.saturation < 0.55 ? 0.65 : hsl.saturation;
+    return hsl.withLightness(lightness).withSaturation(saturation).toColor();
+  }
+
+  /// Color legible del equipo (para texto/franja/borde de la tarjeta).
+  static Color readableForEquipo(String? equipo) =>
+      readable(forEquipo(equipo));
 
   static Color? _parseHex(String hexRaw) {
     var hex = hexRaw.trim();
@@ -91,6 +107,18 @@ class EventStyles {
     return text.contains('visita');
   }
 
+  /// ¿El evento es una "incidencia"? (texto contiene "incidencia")
+  static bool esIncidencia(Evento ev) {
+    final text = [
+      ev.titulo,
+      ev.detalles,
+      ev.comentarios,
+      ev.referencia,
+      ev.nombreCliente,
+    ].join(' ').toLowerCase();
+    return text.contains('incidencia');
+  }
+
   /// Limpia la dirección (quita <br> y etiquetas HTML).
   static String formatDireccion(String? raw) {
     var r = UiText.sanitizeDbValue(raw);
@@ -100,11 +128,12 @@ class EventStyles {
     return r.trim();
   }
 
-  /// Franja horaria "8:00 - 11:00".
+  /// Franja horaria del evento "8:00 - 11:00" (formato independiente del eje de
+  /// horas del calendario, que usa "08h"). startIndex 0 = 8:00.
   static String horaPrevista(int startIndex, int duration) {
-    final inicio = kHours[startIndex];
+    final inicio = '${8 + startIndex}:00';
     final finIndex = startIndex + duration;
-    final fin = finIndex < kHours.length ? kHours[finIndex] : 'Fin';
+    final fin = finIndex < kHours.length ? '${8 + finIndex}:00' : 'Fin';
     return '$inicio - $fin';
   }
 }

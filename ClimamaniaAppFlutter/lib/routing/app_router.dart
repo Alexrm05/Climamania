@@ -264,13 +264,21 @@ GoRouter createRouter(SessionService session) {
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
         branches: [
-          // Orden EXACTO de la barra inferior: Calendario · Inicio ·
-          // Valoraciones · Adicionales · Web.
+          // Orden EXACTO de la barra inferior: Calendario · Adicionales ·
+          // Inicio · Valoraciones · Web.
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/calendar',
                 builder: (context, state) => const CalendarScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/adicionales',
+                builder: (context, state) => const AdicionalesScreen(),
               ),
             ],
           ),
@@ -287,14 +295,6 @@ GoRouter createRouter(SessionService session) {
               GoRoute(
                 path: '/ratings',
                 builder: (context, state) => const ValoracionesScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/adicionales',
-                builder: (context, state) => const AdicionalesScreen(),
               ),
             ],
           ),

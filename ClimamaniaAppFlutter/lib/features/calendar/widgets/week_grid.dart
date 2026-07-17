@@ -12,7 +12,7 @@ const double _headerH = 46;
 // Ancho mínimo cómodo por día: evita que el texto se amontone en móvil.
 // Si los 5 días no caben, la rejilla se desplaza horizontalmente.
 const double _minDayColW = 120;
-const Color _gridLine = Color(0xFFE0E0E0);
+const Color _gridLine = AppColors.border;
 
 /// Rejilla semanal del calendario: cabecera de días + filas horarias y los
 /// eventos posicionados encima (tarjeta individual o bloque agrupado).
@@ -125,8 +125,8 @@ class WeekGrid extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: today
-            ? const Color(0xFFFFF3E0)
-            : (hourCol ? const Color(0xFFFAFAFA) : AppColors.primaryLight),
+            ? AppColors.footerActiveBg
+            : (hourCol ? AppColors.surfaceWarm : AppColors.primaryLight),
         border: Border.all(color: _gridLine, width: 0.5),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
@@ -138,7 +138,7 @@ class WeekGrid extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
-          color: today ? const Color(0xFFBF360C) : AppColors.primaryDark,
+          color: today ? AppColors.primary : AppColors.primaryDark,
         ),
       ),
     );
@@ -150,12 +150,12 @@ class WeekGrid extends StatelessWidget {
       height: _rowH,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: AppColors.surfaceWarm,
         border: Border.all(color: _gridLine, width: 0.5),
       ),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 11, color: Color(0xFF757575)),
+        style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
       ),
     );
   }
@@ -259,7 +259,7 @@ class WeekGrid extends StatelessWidget {
     final start = DateTime(
         controller.weekStart.year, controller.weekStart.month, controller.weekStart.day);
     final diff = day.difference(start).inDays;
-    if (diff < 0 || diff > 4) return null;
+    if (diff < 0 || diff > 6) return null;
     return diff + 1;
   }
 
@@ -284,7 +284,7 @@ class _EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = EventStyles.forEvento(ev);
+    final color = EventStyles.readable(EventStyles.forEvento(ev));
     final hora = EventStyles.horaPrevista(startIndex, duration);
     final dir = EventStyles.formatDireccion(ev.direccion);
     final pedidoValido = EventStyles.isPedidoValido(ev.referencia);
@@ -293,17 +293,19 @@ class _EventCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: EventStyles.bgForEvento(ev, alpha: 80),
+          color: EventStyles.bgForEvento(ev, alpha: 105),
           borderRadius: BorderRadius.circular(8),
+          // Borde con el color del equipo para que la tarjeta destaque de la
+          // rejilla incluso con colores de equipo claros. "Hoy" tiene prioridad.
           border: today
-              ? Border.all(color: const Color(0xFF1976D2), width: 2)
-              : null,
+              ? Border.all(color: AppColors.infoFg, width: 2)
+              : Border.all(color: color, width: 1.5),
         ),
         clipBehavior: Clip.antiAlias,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(width: 5, color: color),
+            Container(width: 8, color: color),
             Expanded(
               child: SingleChildScrollView(
                 physics: const NeverScrollableScrollPhysics(),
@@ -340,20 +342,21 @@ class _EventCard extends StatelessWidget {
                       style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: EventStyles.forEquipo(ev.equipoInstaladores)),
+                          color: EventStyles.readableForEquipo(
+                              ev.equipoInstaladores)),
                     ),
                     if (dir.isNotEmpty)
                       Text(dir,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                              fontSize: 11, color: Color(0xFF263238))),
+                              fontSize: 11, color: AppColors.textSecondary)),
                     if (ev.telefono.trim().isNotEmpty)
                       Text('Tel. ${ev.telefono.trim()}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                              fontSize: 11, color: Color(0xFF263238))),
+                              fontSize: 11, color: AppColors.textSecondary)),
                   ],
                 ),
               ),
@@ -400,7 +403,7 @@ class _GroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final first = group.first;
-    final color = EventStyles.forEvento(first);
+    final color = EventStyles.readable(EventStyles.forEvento(first));
     final hora = EventStyles.horaPrevista(startIndex, duration);
     const maxVisible = 2;
 
@@ -411,14 +414,14 @@ class _GroupCard extends StatelessWidget {
           color: EventStyles.bgForEvento(first, alpha: 140),
           borderRadius: BorderRadius.circular(8),
           border: today
-              ? Border.all(color: const Color(0xFF1976D2), width: 2)
-              : null,
+              ? Border.all(color: AppColors.infoFg, width: 2)
+              : Border.all(color: color, width: 1.5),
         ),
         clipBehavior: Clip.antiAlias,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(width: 5, color: color),
+            Container(width: 8, color: color),
             Expanded(
               child: SingleChildScrollView(
                 physics: const NeverScrollableScrollPhysics(),
@@ -430,10 +433,10 @@ class _GroupCard extends StatelessWidget {
                         style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A237E))),
+                            color: AppColors.textPrimary)),
                     Text('${group.length} eventos',
                         style: const TextStyle(
-                            fontSize: 11, color: Color(0xFF455A64))),
+                            fontSize: 11, color: AppColors.textMuted)),
                     for (final ev in group.take(maxVisible))
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
@@ -444,13 +447,13 @@ class _GroupCard extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                    fontSize: 12, color: Color(0xFF212121))),
+                                    fontSize: 12, color: AppColors.textPrimary)),
                             if (ev.nombreCliente.trim().isNotEmpty)
                               Text(ev.nombreCliente.trim(),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                      fontSize: 11, color: Color(0xFF212121))),
+                                      fontSize: 11, color: AppColors.textPrimary)),
                             Text(
                               ev.equipoInstaladores.isNotEmpty
                                   ? 'Equipo ${ev.equipoInstaladores}'
@@ -459,7 +462,7 @@ class _GroupCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                   fontSize: 11,
-                                  color: EventStyles.forEquipo(
+                                  color: EventStyles.readableForEquipo(
                                       ev.equipoInstaladores)),
                             ),
                           ],
@@ -468,7 +471,7 @@ class _GroupCard extends StatelessWidget {
                     if (group.length > maxVisible)
                       Text('+ ${group.length - maxVisible} eventos más',
                           style: const TextStyle(
-                              fontSize: 11, color: Color(0xFF455A64))),
+                              fontSize: 11, color: AppColors.textMuted)),
                   ],
                 ),
               ),

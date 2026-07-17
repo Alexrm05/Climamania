@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
 
 /// Pantalla provisional "Próximamente / En construcción".
 /// - Como rama del shell ([standalone] = false): solo el contenido centrado.
@@ -16,29 +18,39 @@ class ComingSoonScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
     final content = Container(
       color: AppColors.primaryLight,
       alignment: Alignment.center,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.construction, size: 56, color: AppColors.primary),
-          const SizedBox(height: 16),
+          Container(
+            width: 72,
+            height: 72,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.footerActiveBg,
+              borderRadius: AppRadius.brLg,
+              border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.22),
+                  width: 1.5),
+            ),
+            child: const Icon(Icons.construction_rounded,
+                size: 38, color: AppColors.primary),
+          ),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryDark,
-            ),
+            style: t.titleLarge,
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Próximamente / En construcción',
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Estamos trabajando en esta sección. Estará disponible próximamente.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            style: t.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),

@@ -6,7 +6,8 @@ import '../../data/models/evento.dart';
 import '../../data/repositories/home_repository.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_decorations.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
 import '../shell/refresh_signal.dart';
 import 'calendar_controller.dart';
 import 'event_styles.dart';
@@ -81,6 +82,14 @@ class _CalendarViewState extends State<_CalendarView> {
   }
 
   void _openDetalle(Evento ev) {
+    if (EventStyles.esIncidencia(ev)) {
+      context.push('/incidencias');
+      return;
+    }
+    if (EventStyles.esVisita(ev)) {
+      context.push('/visitas');
+      return;
+    }
     if (!EventStyles.isPedidoValido(ev.referencia)) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -122,105 +131,173 @@ class _CalendarViewState extends State<_CalendarView> {
   }
 
   Widget _header(CalendarController c) {
+    final t = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.fromLTRB(4, 6, 4, 4),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left, color: AppColors.primaryDark),
-            onPressed: c.prevWeek,
-            tooltip: 'Semana anterior',
-          ),
+          _navBtn(Icons.chevron_left_rounded, c.prevWeek, 'Semana anterior'),
+          const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: Text(
               c.weekLabel,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primaryDark,
-              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: t.titleMedium,
             ),
           ),
-          GestureDetector(
-            onTap: c.goToday,
-            child: Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(5),
-                border: Border.all(color: AppColors.primaryDark),
-              ),
-              child: const Text('Hoy',
-                  style: TextStyle(
-                      fontSize: 12, color: AppColors.primaryDark)),
+          const SizedBox(width: AppSpacing.xs),
+          _navBtn(Icons.chevron_right_rounded, c.nextWeek, 'Semana siguiente'),
+          const SizedBox(width: AppSpacing.sm),
+          // Botón "Hoy" como píldora con tinte de marca.
+          Material(
+            color: AppColors.footerActiveBg,
+            shape: RoundedRectangleBorder(
+              borderRadius: AppRadius.brPill,
+              side: BorderSide(color: AppColors.primary.withValues(alpha: 0.30)),
             ),
-          ),
-          IconButton(
-            icon:
-                const Icon(Icons.chevron_right, color: AppColors.primaryDark),
-            onPressed: c.nextWeek,
-            tooltip: 'Semana siguiente',
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: c.goToday,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 7),
+                child: Text('Hoy',
+                    style: t.labelLarge?.copyWith(color: AppColors.primary)),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
+  Widget _navBtn(IconData icon, VoidCallback onTap, String tooltip) {
+    return Material(
+      color: AppColors.surfaceWarm,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.brMd,
+        side: const BorderSide(color: AppColors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Tooltip(
+          message: tooltip,
+          child: SizedBox(
+            width: 36,
+            height: 36,
+            child: Icon(icon, color: AppColors.primaryDark, size: 24),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _filters(CalendarController c) {
+    final t = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
       child: Row(
         children: [
-          const Text('Filtros:',
-              style: TextStyle(fontSize: 12, color: AppColors.primaryDark)),
-          const SizedBox(width: 4),
-          // Filtro de equipo
+          // Filtro de equipo (solo admin)
           Expanded(
             child: Opacity(
-              opacity: c.isAdmin ? 1 : 0.7,
-              child: GestureDetector(
+              opacity: c.isAdmin ? 1 : 0.55,
+              child: _filterChip(
+                icon: Icons.groups_outlined,
+                label: c.equipoFilterLabel,
                 onTap: c.isAdmin ? () => _showEquipoDialog(c) : null,
-                child: Container(
-                  height: 32,
-                  alignment: Alignment.centerLeft,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: AppDecorations.editText,
-                  child: Text(
-                    c.equipoFilterLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, color: Colors.black),
-                  ),
-                ),
               ),
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSpacing.sm),
           // Filtro de estado
           Expanded(
             child: Container(
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: AppDecorations.editText,
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  isExpanded: true,
-                  isDense: true,
-                  value: c.filtroEstado,
-                  style: const TextStyle(fontSize: 12, color: Colors.black),
-                  items: [
-                    for (final e in CalendarController.estadoOptions)
-                      DropdownMenuItem(value: e, child: Text(e)),
-                  ],
-                  onChanged: (v) => c.setEstado(v ?? 'Todos los estados'),
-                ),
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: AppRadius.brPill,
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.tune,
+                      size: 16, color: AppColors.textMuted),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        isDense: true,
+                        value: c.filtroEstado,
+                        icon: const Icon(Icons.expand_more,
+                            size: 18, color: AppColors.textMuted),
+                        style: t.labelLarge
+                            ?.copyWith(color: AppColors.textPrimary),
+                        // El valor cerrado en una sola línea con ellipsis.
+                        selectedItemBuilder: (context) => [
+                          for (final e in CalendarController.estadoOptions)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(e,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis),
+                            ),
+                        ],
+                        items: [
+                          for (final e in CalendarController.estadoOptions)
+                            DropdownMenuItem(value: e, child: Text(e)),
+                        ],
+                        onChanged: (v) =>
+                            c.setEstado(v ?? 'Todos los estados'),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _filterChip(
+      {required IconData icon, required String label, VoidCallback? onTap}) {
+    final t = Theme.of(context).textTheme;
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.brPill,
+        side: const BorderSide(color: AppColors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              Icon(icon, size: 16, color: AppColors.textMuted),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        t.labelLarge?.copyWith(color: AppColors.textPrimary)),
+              ),
+              if (onTap != null)
+                const Icon(Icons.expand_more,
+                    size: 18, color: AppColors.textMuted),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -231,7 +308,7 @@ class _CalendarViewState extends State<_CalendarView> {
     }
     // La rejilla se muestra siempre; los errores salen como aviso (SnackBar).
     // En móvil hay scroll horizontal; el swipe de semana lo gestiona WeekGrid
-    // solo cuando los 5 días caben (tablet/iPad).
+    // solo cuando los 7 días caben (tablet/iPad).
     return WeekGrid(
       controller: c,
       onEventTap: _openDetalle,

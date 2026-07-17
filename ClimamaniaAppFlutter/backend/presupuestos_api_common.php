@@ -559,7 +559,8 @@ function presup_save_budget_pdf(
     string $equipoInstaladores,
     array $lineas,
     array $totals,
-    string $firmaRelativePath
+    string $firmaRelativePath,
+    array $firmaMeta = []
 ): array {
     $pdfBinary = presup_build_nota_cargo_pdf(
         $idPresupuesto,
@@ -572,7 +573,8 @@ function presup_save_budget_pdf(
         $equipoInstaladores,
         $lineas,
         $totals,
-        $firmaRelativePath
+        $firmaRelativePath,
+        $firmaMeta
     );
     $pdfFileName = "Pedido-" . $idPresupuesto . "-" . date("YmdHis") . ".pdf";
     $pdfDir = presup_resolve_images_root() . "/presupuestosAdicionales";
@@ -600,7 +602,8 @@ function presup_build_nota_cargo_pdf(
     string $equipoInstaladores,
     array $lineas,
     array $totals,
-    string $firmaRelativePath
+    string $firmaRelativePath,
+    array $firmaMeta = []
 ): string {
     $logoImage = presup_load_pdf_logo_image();
     $signatureImage = presup_load_pdf_signature_image($firmaRelativePath);
@@ -806,6 +809,24 @@ function presup_build_nota_cargo_pdf(
         $drawX = $sigX + (($sigW - $drawW) / 2.0);
         $drawTopY = $sigY - (($sigH - $drawH) / 2.0);
         $currentPage .= presup_pdf_image_cmd($signatureResourceName, $drawX, $drawTopY, $drawW, $drawH);
+    }
+
+    // Trazabilidad de la firma: fecha/hora y ubicación (bajo la caja de firma).
+    $fechaFirma = trim((string)($firmaMeta["fecha_hora"] ?? ""));
+    if ($fechaFirma === "") {
+        $fechaFirma = date("d-m-Y H:i:s");
+    }
+    $latFirma = trim((string)($firmaMeta["latitud"] ?? ""));
+    $lngFirma = trim((string)($firmaMeta["longitud"] ?? ""));
+    $metaY = $sigY - $sigH - 12.0;
+    $currentPage .= presup_pdf_text_cmd($sigX, $metaY, "Firmado: " . $fechaFirma, 7.6);
+    if ($latFirma !== "" && $lngFirma !== "") {
+        $currentPage .= presup_pdf_text_cmd(
+            $sigX,
+            $metaY - 10.0,
+            "Ubicación: lat " . $latFirma . ", long " . $lngFirma,
+            7.6
+        );
     }
 
     $currentPage .= presup_pdf_text_cmd(
@@ -1515,16 +1536,18 @@ function presup_load_pdf_signature_image(string $firmaRelativePath): ?array
 
 function presup_build_pdf_image_from_binary(string $binary, string $name): ?array
 {
-    $info = @getimagesizefromstring($binary);
-    if (!is_array($info) || !isset($info[0], $info[1])) {
-        return null;
-    }
-
-    $mime = strtolower((string)($info["mime"] ?? ""));
     $imgName = preg_replace('/[^A-Za-z0-9_]/', '', $name);
     if ($imgName === "") {
         return null;
     }
+
+    $info = @getimagesizefromstring($binary);
+    if (!is_array($info) || !isset($info[0], $info[1])) {
+        // Formato no reconocido por getimagesize: intenta con GD.
+        return presup_gd_image_to_jpeg_dict($binary, $imgName);
+    }
+
+    $mime = strtolower((string)($info["mime"] ?? ""));
 
     if ($mime === "image/jpeg" || $mime === "image/jpg") {
         $channels = (int)($info["channels"] ?? 3);
@@ -1549,7 +1572,9 @@ function presup_build_pdf_image_from_binary(string $binary, string $name): ?arra
     if ($mime === "image/png") {
         $pngData = presup_png_to_rgb_flate($binary);
         if ($pngData === null) {
-            return null;
+            // El parser propio no soporta este PNG (p. ej. el que genera Skia/
+            // Flutter): fallback robusto con GD.
+            return presup_gd_image_to_jpeg_dict($binary, $imgName);
         }
         return [
             "name" => $imgName,
@@ -1562,7 +1587,55 @@ function presup_build_pdf_image_from_binary(string $binary, string $name): ?arra
         ];
     }
 
-    return null;
+    // Otros formatos (webp, gif…): intenta con GD.
+    return presup_gd_image_to_jpeg_dict($binary, $imgName);
+}
+
+/// Decodifica una imagen con GD, la aplana sobre blanco y la devuelve como JPEG
+/// listo para incrustar en el PDF (DCTDecode). Sirve de fallback cuando el
+/// parser PNG propio no soporta el formato de entrada.
+function presup_gd_image_to_jpeg_dict(string $binary, string $imgName): ?array
+{
+    if (!function_exists("imagecreatefromstring")) {
+        return null;
+    }
+    $src = @imagecreatefromstring($binary);
+    if ($src === false) {
+        return null;
+    }
+    $w = imagesx($src);
+    $h = imagesy($src);
+    if ($w <= 0 || $h <= 0) {
+        imagedestroy($src);
+        return null;
+    }
+    $canvas = imagecreatetruecolor($w, $h);
+    imagealphablending($canvas, true);
+    $white = imagecolorallocate($canvas, 255, 255, 255);
+    imagefilledrectangle($canvas, 0, 0, $w, $h, $white);
+    imagecopy($canvas, $src, 0, 0, 0, 0, $w, $h);
+
+    ob_start();
+    $ok = imagejpeg($canvas, null, 92);
+    $jpeg = ob_get_clean();
+
+    // @ para no ensuciar el JSON con el deprecation de imagedestroy en PHP 8.5+.
+    @imagedestroy($src);
+    @imagedestroy($canvas);
+
+    if (!$ok || !is_string($jpeg) || $jpeg === "") {
+        return null;
+    }
+    return [
+        "name" => $imgName,
+        "binary" => $jpeg,
+        "width" => $w,
+        "height" => $h,
+        "bits" => 8,
+        "color_space" => "DeviceRGB",
+        "filter" => "DCTDecode",
+        "decode" => null
+    ];
 }
 
 function presup_png_to_rgb_flate(string $binary): ?array
@@ -1833,6 +1906,41 @@ function presup_fetch_bcc_destinations(PDO $pdo): array
     return array_keys($emails);
 }
 
+/// Formatea la dirección para el correo en dos líneas: la calle en la primera
+/// y "código postal - población" en la segunda. Devuelve HTML seguro (<br>).
+function presup_email_direccion_html(string $direccionCliente): string
+{
+    $clean = presup_clean_text_for_mail($direccionCliente); // una línea, "calle, CP Ciudad"
+    if ($clean === "") {
+        return "";
+    }
+    $safe = static function (string $s): string {
+        return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    };
+
+    $pos = mb_strrpos($clean, ", ", 0, "UTF-8");
+    if ($pos === false) {
+        return $safe($clean);
+    }
+    $calle = trim(mb_substr($clean, 0, $pos, "UTF-8"));
+    $cpPoblacion = trim(mb_substr($clean, $pos + 2, null, "UTF-8"));
+
+    // "CP Población" -> "CP - Población".
+    $sp = mb_strpos($cpPoblacion, " ", 0, "UTF-8");
+    if ($sp !== false) {
+        $cp = trim(mb_substr($cpPoblacion, 0, $sp, "UTF-8"));
+        $poblacion = trim(mb_substr($cpPoblacion, $sp + 1, null, "UTF-8"));
+        if ($poblacion !== "") {
+            $cpPoblacion = $cp . " - " . $poblacion;
+        }
+    }
+
+    if ($calle === "") {
+        return $safe($cpPoblacion);
+    }
+    return $safe($calle) . "<br>" . $safe($cpPoblacion);
+}
+
 function presup_build_email_body(
     int $idPresupuesto,
     string $numeroPedido,
@@ -1843,7 +1951,8 @@ function presup_build_email_body(
 ): string {
     $pedido = htmlspecialchars(presup_normalize_text($numeroPedido, 120), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
     $cliente = htmlspecialchars(presup_normalize_text($nombreCliente, 255), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
-    $direccion = htmlspecialchars(presup_clean_text_for_mail($direccionCliente), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    // Dirección en dos líneas: "Calle ...\nCP - Población".
+    $direccion = presup_email_direccion_html($direccionCliente);
 
     $rows = "";
     foreach ($lineas as $linea) {

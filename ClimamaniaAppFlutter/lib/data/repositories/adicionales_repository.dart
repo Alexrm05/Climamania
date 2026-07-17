@@ -18,21 +18,38 @@ class AdicionalesRepository {
         query: {'q': q, 'limit': '0'},
         noCache: true,
       );
-      if (json['success'] != true) return [];
-      final out = <CatalogProduct>[];
-      final raw = json['productos'];
-      if (raw is List) {
-        for (final e in raw) {
-          if (e is Map) {
-            final p = CatalogProduct.fromJson(Map<String, dynamic>.from(e));
-            if (p.idProduct > 0) out.add(p);
-          }
-        }
-      }
-      return out;
+      return _parseProductos(json);
     } catch (_) {
       return [];
     }
+  }
+
+  /// Los 5 artículos más usados (para acceso rápido bajo el buscador).
+  Future<List<CatalogProduct>> getMasUsados() async {
+    try {
+      final json = await _api.getJson(
+        AppConfig.getAdicionalesMasUsados,
+        noCache: true,
+      );
+      return _parseProductos(json);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  List<CatalogProduct> _parseProductos(Map<String, dynamic> json) {
+    if (json['success'] != true) return [];
+    final out = <CatalogProduct>[];
+    final raw = json['productos'];
+    if (raw is List) {
+      for (final e in raw) {
+        if (e is Map) {
+          final p = CatalogProduct.fromJson(Map<String, dynamic>.from(e));
+          if (p.idProduct > 0) out.add(p);
+        }
+      }
+    }
+    return out;
   }
 
   Future<({bool ok, String message, String idPresupuesto, String pdfUrl})>

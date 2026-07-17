@@ -12,6 +12,10 @@ $API_KEY = "TEST123";
 $PS_PREFIX = isset($PS_DB_PREFIX) && $PS_DB_PREFIX !== "" ? $PS_DB_PREFIX : "ps_";
 $DEFAULT_IVA = "21.0000";
 
+// Cuando se incluye desde otro endpoint (p. ej. más usados) solo se cargan las
+// funciones; no se ejecuta la respuesta del endpoint.
+if (!defined('ADICIONALES_CATALOGO_LIB')) {
+
 if (!isset($_GET["api_key"]) || trim((string)$_GET["api_key"]) !== $API_KEY) {
     echo json_encode(["success" => false, "message" => "API key invalida"]);
     exit;
@@ -72,6 +76,8 @@ try {
         "message" => "ERROR: " . $e->getMessage()
     ]);
 }
+
+} // fin del bloque endpoint (ADICIONALES_CATALOGO_LIB)
 
 function fetchProductIdsBySearch(PDO $pdo, string $prefix, int $shopId, array $categoryIds, string $query, int $limit): array
 {

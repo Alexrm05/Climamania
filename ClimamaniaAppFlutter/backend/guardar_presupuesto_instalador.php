@@ -164,7 +164,12 @@ try {
         $equipoInstaladores,
         $lineas,
         $totals,
-        $firmaRelativePath
+        $firmaRelativePath,
+        [
+            "fecha_hora" => date("d-m-Y H:i:s"),
+            "latitud" => trim((string)request_value("latitud")),
+            "longitud" => trim((string)request_value("longitud")),
+        ]
     );
     $pdfRelativePath = $pdfData["relative_path"];
     $pdfAbsolutePath = $pdfData["absolute_path"];

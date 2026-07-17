@@ -21,9 +21,11 @@ class AppConfig {
   // Detalle del pedido (Fase 3)
   static const String getPedido = 'get_pedido.php';
   static const String addComentario = 'add_comentario.php';
+  static const String eliminarComentario = 'eliminar_comentario.php';
 
   // Flujo de instalación (Fase 3)
   static const String uploadFoto = 'upload_foto.php';
+  static const String eliminarFoto = 'eliminar_foto.php';
   static const String getFoto = 'get_foto.php';
   static const String finalizarInstalacion = 'finalizar_instalacion.php';
   static const String generarConformePdf = 'generar_conforme_cliente_pdf.php';
@@ -56,6 +58,8 @@ class AppConfig {
   // Adicionales / Presupuestos (Fase 6)
   static const String getAdicionalesCatalogo = 'get_adicionales_catalogo.php';
   static const String guardarPresupuesto = 'guardar_presupuesto_instalador.php';
+  static const String getAdicionalesMasUsados =
+      'get_adicionales_mas_usados.php';
   static const String getPresupuestos = 'get_presupuestos_instalador.php';
   static const String getPresupuestoDetalle =
       'get_presupuesto_instalador_detalle.php';

@@ -227,7 +227,7 @@ try {
 
     // Comentarios del instalador
     $stmt = $pdo->prepare(
-        "SELECT Fecha, Usuario, Texto
+        "SELECT id, Fecha, Usuario, Texto
          FROM ClimaInstal_Comentarios
          WHERE Pedido = :ref
          ORDER BY Fecha ASC"
@@ -286,6 +286,13 @@ function fetchFotosByClave(PDO $pdo, string $referencia, array $claves): array
             if (!empty($row["Documento"])) {
                 $result[] = $row["Documento"];
             }
+        }
+        // Si la búsqueda estricta (por columna Clave) no encuentra nada, recae
+        // en el patrón por nombre de fichero "imagenes/{ref}-CLAVE%", que es
+        // como las guarda/consulta el web antiguo. Necesario para fotos del
+        // cliente (y otras) cuya columna Clave está vacía o es inconsistente.
+        if (empty($result)) {
+            return fetchFotosByPattern($pdo, $referencia, $claves);
         }
         return $result;
     } catch (Exception $e) {

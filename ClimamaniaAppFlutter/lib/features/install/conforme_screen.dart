@@ -12,6 +12,8 @@ import '../../services/location_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
 
 enum _Step { decision, series, firma }
 
@@ -59,7 +61,7 @@ class _ConformeScreenState extends State<ConformeScreen> {
     super.initState();
     _sig = SignatureController(
       penStrokeWidth: 2.4,
-      penColor: const Color(0xFF1565C0),
+      penColor: AppColors.primary,
       exportBackgroundColor: Colors.white,
     );
     // Dev: previsualizar directamente un paso concreto.
@@ -119,6 +121,7 @@ class _ConformeScreenState extends State<ConformeScreen> {
   }
 
   Future<void> _guardarSeries() async {
+    FocusScope.of(context).unfocus(); // cerrar el teclado al guardar
     setState(() => _savingSeries = true);
     final session = context.read<SessionService>();
     final (ok, msg) = await context.read<InstallRepository>().guardarBoeEquipos(
@@ -150,6 +153,7 @@ class _ConformeScreenState extends State<ConformeScreen> {
   }
 
   Future<void> _aceptar() async {
+    FocusScope.of(context).unfocus(); // cerrar el teclado al aceptar
     if (!_firmanteValido) {
       _msg('Indica quién firma y completa sus datos');
       return;
@@ -287,15 +291,8 @@ class _ConformeScreenState extends State<ConformeScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            onPressed: _continuarDecision,
-            child: const Text('Continuar'),
-          ),
-        ),
+        const SizedBox(height: AppSpacing.md),
+        _primaryButton('Continuar', _continuarDecision),
       ],
     );
   }
@@ -312,16 +309,21 @@ class _ConformeScreenState extends State<ConformeScreen> {
             children: [
               if (_source.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: Text(
                       'Origen: ${_source == 'revision' ? 'revisión guardada' : 'datos del pedido'}',
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary)),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: AppColors.textMuted)),
                 ),
               for (var i = 0; i < _lineas.length; i++) _equipoRow(i),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs),
               OutlinedButton.icon(
                 onPressed: () => setState(() => _lineas.add(BoeLinea())),
+                style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: AppRadius.brPill)),
                 icon: const Icon(Icons.add),
                 label: const Text('Añadir equipo'),
               ),
@@ -331,21 +333,10 @@ class _ConformeScreenState extends State<ConformeScreen> {
         SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _savingSeries ? null : _guardarSeries,
-                child: _savingSeries
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppColors.white))
-                    : const Text('Guardar y continuar'),
-              ),
-            ),
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: _primaryButton('Guardar y continuar',
+                _savingSeries ? null : _guardarSeries,
+                loading: _savingSeries),
           ),
         ),
       ],
@@ -357,7 +348,7 @@ class _ConformeScreenState extends State<ConformeScreen> {
       padding: const EdgeInsets.only(bottom: 10),
       child: Container(
         decoration: AppDecorations.whiteCard,
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Row(
           children: [
             Expanded(
@@ -382,7 +373,7 @@ class _ConformeScreenState extends State<ConformeScreen> {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline, color: Color(0xFFB00020)),
+              icon: const Icon(Icons.delete_outline, color: AppColors.errorFg),
               onPressed: () => setState(() => _lineas.removeAt(i)),
             ),
           ],
@@ -430,9 +421,8 @@ class _ConformeScreenState extends State<ConformeScreen> {
             controller: _obsCtrl,
             minLines: 2,
             maxLines: 5,
-            decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 10)),
+            decoration: AppDecorations.bareInput(
+                contentPadding: const EdgeInsets.symmetric(vertical: 10)),
           ),
         )),
         _card('Firma', Column(
@@ -441,15 +431,15 @@ class _ConformeScreenState extends State<ConformeScreen> {
             Container(
               height: 220,
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: AppColors.cardStroke),
-                borderRadius: BorderRadius.circular(8),
+                color: AppColors.white,
+                border: Border.all(color: AppColors.border),
+                borderRadius: AppRadius.brMd,
               ),
               clipBehavior: Clip.antiAlias,
               child: Signature(
                   controller: _sig, backgroundColor: Colors.white),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton.icon(
@@ -460,21 +450,9 @@ class _ConformeScreenState extends State<ConformeScreen> {
             ),
           ],
         )),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            onPressed: _processing ? null : _aceptar,
-            child: _processing
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.white))
-                : const Text('Aceptar y firmar'),
-          ),
-        ),
+        const SizedBox(height: AppSpacing.xs),
+        _primaryButton('Aceptar y firmar', _processing ? null : _aceptar,
+            loading: _processing),
       ],
     );
   }
@@ -486,9 +464,8 @@ class _ConformeScreenState extends State<ConformeScreen> {
       child: TextField(
         controller: ctrl,
         onChanged: (_) => setState(() {}),
-        decoration: InputDecoration(
+        decoration: AppDecorations.bareInput(
             labelText: label,
-            border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 10)),
       ),
     );
@@ -496,23 +473,46 @@ class _ConformeScreenState extends State<ConformeScreen> {
 
   Widget _card(String title, Widget child) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Container(
         width: double.infinity,
         decoration: AppDecorations.whiteCard,
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryDark)),
-            const SizedBox(height: 10),
-            child,
-          ],
+        child: ClipRRect(
+          borderRadius: AppRadius.brLg,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.md),
+                child,
+              ],
+            ),
+          ),
         ),
+      ),
+    );
+  }
+
+  /// Botón principal (verde) en píldora, con spinner opcional.
+  Widget _primaryButton(String label, VoidCallback? onTap,
+      {bool loading = false, double height = 50}) {
+    return SizedBox(
+      width: double.infinity,
+      height: height,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.confirm,
+            shape: RoundedRectangleBorder(borderRadius: AppRadius.brPill)),
+        child: loading
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: AppColors.white))
+            : Text(label),
       ),
     );
   }

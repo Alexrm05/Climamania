@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import 'ui_text.dart';
 
 /// Normalización y colores de prioridad (Alta/Media/Baja/Sin prioridad).
@@ -32,31 +33,29 @@ class Prioridad {
   static Color bg(String label) {
     switch (label) {
       case 'Alta':
-        return const Color(0xFFD32F2F);
+        return AppColors.errorFg;
       case 'Media':
-        return const Color(0xFFF9A825);
+        return const Color(0xFFE1912B); // ámbar (contraste con texto blanco)
       case 'Baja':
-        return const Color(0xFFCFD8DC);
+        return const Color(0xFFE4E0DA); // neutro cálido
       default:
-        return const Color(0xFFE0E0E0);
+        return const Color(0xFFEDEAE5);
     }
   }
 
   static Color fg(String label) =>
       label == 'Baja' || label == 'Sin prioridad'
-          ? const Color(0xFF1F2937)
+          ? AppColors.textSecondary
           : Colors.white;
 
   static Color stroke(String label) {
     switch (label) {
       case 'Alta':
-        return const Color(0xFFF4B0A9);
+        return const Color(0xFFE7B0AC);
       case 'Media':
-        return const Color(0xFFF3D09B);
-      case 'Baja':
-        return const Color(0xFFCFD8DC);
+        return const Color(0xFFF1D4A6);
       default:
-        return const Color(0xFFE9DCCF);
+        return AppColors.border;
     }
   }
 }

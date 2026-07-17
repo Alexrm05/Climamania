@@ -45,13 +45,16 @@ try {
     $stmt->execute([":doc" => $doc]);
     $row = $stmt->fetch();
 
-    if (!$row || empty($row["Documento"])) {
-        http_response_code(404);
-        echo "No encontrado";
-        exit;
+    // Si el documento está registrado en ClimaInstal_Fotografias usamos ese
+    // valor. Si no lo está (p. ej. ficheros de visitas/incidencias, que se
+    // guardan en otra tabla), intentamos resolver el propio `doc` recibido
+    // contra el directorio de imágenes. La verificación de allowedRoots más
+    // abajo garantiza que solo se sirvan archivos dentro de /imagenes.
+    if ($row && !empty($row["Documento"])) {
+        $storedDoc = trim(str_replace("\\", "/", (string)$row["Documento"]));
+    } else {
+        $storedDoc = trim(str_replace("\\", "/", $doc));
     }
-
-    $storedDoc = trim(str_replace("\\", "/", (string)$row["Documento"]));
     $imagesDir = rtrim($IMAGES_DIR, "/");
     $baseRoot = $imagesDir;
     if (basename($imagesDir) === "imagenes") {

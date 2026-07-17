@@ -8,7 +8,9 @@ import '../../data/repositories/pedido_repository.dart';
 import '../../services/location_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_radius.dart';
 import '../../theme/app_decorations.dart';
+import '../../theme/app_spacing.dart';
 
 /// Formulario de finalización de la instalación. Réplica de FinalizarInstalacionActivity.
 class FinalizarScreen extends StatefulWidget {
@@ -87,6 +89,7 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
               child: const Text('Cancelar')),
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.confirm),
               child: const Text('Finalizar')),
         ],
       ),
@@ -130,10 +133,20 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Referencia ${widget.referencia}',
-              style: const TextStyle(
-                  fontSize: 13, color: AppColors.textSecondary)),
-          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: AppDecorations.chipLight,
+              child: Text('Nº ${widget.referencia}',
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelMedium
+                      ?.copyWith(color: AppColors.textSecondary)),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
           if (_fotosCargadas) _avisoFotos(),
           _card('Cobro', Column(
             children: [
@@ -164,52 +177,63 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
               controller: _obsCtrl,
               minLines: 3,
               maxLines: 6,
-              decoration: const InputDecoration(
+              decoration: AppDecorations.bareInput(
                 hintText: 'Observaciones...',
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
           )),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _submitting ? null : _finalizar,
-                    child: _submitting
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: AppColors.white))
-                        : const Text('Finalizar ahora'),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: SizedBox(
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.border)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
+            child: Row(
+              children: [
+                SizedBox(
                   height: 52,
                   child: OutlinedButton(
                     onPressed: _submitting ? null : () => context.pop(),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryDark,
-                      side: const BorderSide(color: AppColors.primaryDark),
+                      foregroundColor: AppColors.textSecondary,
+                      side: const BorderSide(color: AppColors.borderStrong),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5)),
+                          borderRadius: AppRadius.brPill),
+                      padding: const EdgeInsets.symmetric(horizontal: 22),
                     ),
                     child: const Text('Volver'),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _submitting ? null : _finalizar,
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.confirm,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: AppRadius.brPill)),
+                      icon: _submitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: AppColors.white))
+                          : const Icon(Icons.check_circle_outline),
+                      label: const Text('Finalizar ahora'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -218,53 +242,67 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
 
   Widget _avisoFotos() {
     final completas = _faltan.isEmpty;
+    final fg = completas ? AppColors.successFg : AppColors.errorFg;
+    final t = Theme.of(context).textTheme;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: completas ? const Color(0xFFEEF8F0) : const Color(0xFFFFF1F1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-            color: completas
-                ? const Color(0xFF70AE7D)
-                : const Color(0xFFE28C8C)),
+        color: completas ? AppColors.successTint : AppColors.errorTint,
+        borderRadius: AppRadius.brMd,
+        border: Border.all(color: fg.withValues(alpha: 0.35)),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: completas
-            ? const [
-                Text('Fotografías completas',
-                    style: TextStyle(
-                        color: Color(0xFF2D613A), fontWeight: FontWeight.bold))
-              ]
-            : [
-                for (final f in _faltan)
-                  Text('• $f',
-                      style: const TextStyle(color: Color(0xFF7A2F2F))),
-              ],
+        children: [
+          Icon(
+              completas
+                  ? Icons.check_circle_outline
+                  : Icons.warning_amber_rounded,
+              color: fg,
+              size: 20),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: completas
+                ? Text('Fotografías completas',
+                    style: t.titleSmall?.copyWith(color: fg))
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Faltan fotografías',
+                          style: t.titleSmall?.copyWith(color: fg)),
+                      const SizedBox(height: 2),
+                      for (final f in _faltan)
+                        Text('• $f',
+                            style: t.bodySmall?.copyWith(color: fg)),
+                    ],
+                  ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _card(String title, Widget child) {
     return Padding(
-      padding: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.only(top: AppSpacing.md),
       child: Container(
         width: double.infinity,
         decoration: AppDecorations.whiteCard,
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryDark)),
-            const SizedBox(height: 10),
-            child,
-          ],
+        child: ClipRRect(
+          borderRadius: AppRadius.brLg,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.md),
+                child,
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -280,9 +318,8 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
         ],
-        decoration: InputDecoration(
+        decoration: AppDecorations.bareInput(
           labelText: label,
-          border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 10),
         ),
       ),

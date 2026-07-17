@@ -1,128 +1,129 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/widgets/status_badge.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_decorations.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
 
-/// Pantalla de Valoraciones (rama /ratings). Réplica de ValoracionActivity +
-/// content_valoracion: cabecera hero, tarjeta con el QR oficial y pasos.
+/// Pantalla de Valoraciones (rama /ratings): cabecera hero, tarjeta con el QR
+/// oficial y pasos.
 class ValoracionesScreen extends StatelessWidget {
   const ValoracionesScreen({super.key});
 
-  static const _greyText = Color(0xFF6F6F6F);
-
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final muted = t.bodyMedium?.copyWith(color: AppColors.textSecondary);
+
     return Container(
       color: AppColors.primaryLight,
       child: ListView(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
-          // Cabecera hero.
+          // Hero: icono + título + badge
           _card(
-            decoration: AppDecorations.detailHero.copyWith(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
+            decoration: AppDecorations.detailHero,
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Valoraciones',
-                    style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryDark)),
-                const SizedBox(height: 6),
-                const Text('Ayuda a mejorar nuestro servicio en un minuto.',
-                    style: TextStyle(fontSize: 13, color: _greyText)),
-                const SizedBox(height: 10),
                 Container(
-                  decoration: AppDecorations.chipLight,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  child: const Text('QR oficial',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryDark)),
+                  width: 48,
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.footerActiveBg,
+                    borderRadius: AppRadius.brMd,
+                    border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.22),
+                        width: 1.5),
+                  ),
+                  child: const Icon(Icons.star_rounded,
+                      color: AppColors.primary, size: 28),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Valoraciones', style: t.headlineSmall),
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text('Ayuda a mejorar nuestro servicio en un minuto.',
+                          style: muted),
+                      const SizedBox(height: AppSpacing.sm),
+                      const StatusBadge('QR oficial',
+                          tone: BadgeTone.brand,
+                          icon: Icons.verified_outlined),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 14),
-          // Tarjeta del QR.
+          const SizedBox(height: AppSpacing.md),
+          // QR destacado
           _card(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Text('Escanea el QR y deja tu valoración',
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryDark)),
-                const SizedBox(height: 6),
-                const Text(
-                    'Puedes usar la cámara del móvil o cualquier lector de QR.',
-                    style: TextStyle(fontSize: 13, color: _greyText)),
-                const SizedBox(height: 12),
+                Text('Escanea el QR y deja tu valoración',
+                    textAlign: TextAlign.center, style: t.titleMedium),
+                const SizedBox(height: AppSpacing.xs),
+                Text('Usa la cámara del móvil o cualquier lector de QR.',
+                    textAlign: TextAlign.center, style: muted),
+                const SizedBox(height: AppSpacing.lg),
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE8E1D8)),
+                    color: AppColors.surface,
+                    borderRadius: AppRadius.brLg,
+                    border: Border.all(color: AppColors.border),
                   ),
-                  padding: const EdgeInsets.all(14),
-                  child: Center(
-                    child: Image.asset(
-                      'assets/images/qr_valoracion.jpg',
-                      width: 300,
-                      height: 300,
-                      fit: BoxFit.contain,
-                    ),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Image.asset(
+                    'assets/images/qr_valoracion.jpg',
+                    width: 280,
+                    height: 280,
+                    fit: BoxFit.contain,
                   ),
                 ),
-                const SizedBox(height: 10),
-                const Center(
-                  child: Text('Gracias por compartir tu experiencia.',
-                      style: TextStyle(fontSize: 13, color: _greyText)),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.favorite_rounded,
+                        size: 15, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text('Gracias por compartir tu experiencia.',
+                        style: muted),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          // Pasos rápidos.
+          const SizedBox(height: AppSpacing.md),
+          // Pasos numerados
           _card(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text('Pasos rápidos',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryDark)),
-                SizedBox(height: 6),
-                Text(
-                    '1. Abre la cámara y enfoca el QR.\n'
-                    '2. Completa la valoración en menos de un minuto.',
-                    style: TextStyle(fontSize: 13, color: _greyText)),
+              children: [
+                Text('¿Cómo funciona?', style: t.titleMedium),
+                const SizedBox(height: AppSpacing.md),
+                _step(context, 1, 'Abre la cámara del móvil y enfoca el QR.'),
+                const SizedBox(height: AppSpacing.md),
+                _step(context, 2,
+                    'Completa la valoración en menos de un minuto.'),
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          // Volver (en el shell, vuelve a Inicio).
+          const SizedBox(height: AppSpacing.md),
           SizedBox(
             height: 52,
             child: OutlinedButton(
               onPressed: () => context.go('/home'),
               style: OutlinedButton.styleFrom(
-                backgroundColor: AppColors.white,
-                foregroundColor: AppColors.primaryDark,
-                side: const BorderSide(color: AppColors.primaryDark),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-                textStyle: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.bold),
-              ),
-              child: const Text('Volver'),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.brPill)),
+              child: const Text('Volver al inicio'),
             ),
           ),
         ],
@@ -130,14 +131,43 @@ class ValoracionesScreen extends StatelessWidget {
     );
   }
 
+  Widget _step(BuildContext context, int n, String text) {
+    final t = Theme.of(context).textTheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            color: AppColors.footerActiveBg,
+            shape: BoxShape.circle,
+          ),
+          child: Text('$n',
+              style: t.labelLarge?.copyWith(
+                  color: AppColors.primary, fontWeight: FontWeight.w700)),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Text(text,
+              style:
+                  t.bodyMedium?.copyWith(color: AppColors.textSecondary)),
+        ),
+      ],
+    );
+  }
+
   Widget _card({required Widget child, BoxDecoration? decoration}) {
     return Container(
-      decoration: decoration ??
-          AppDecorations.whiteCard.copyWith(
-            borderRadius: BorderRadius.circular(20),
-          ),
-      padding: const EdgeInsets.all(16),
-      child: child,
+      decoration: decoration ?? AppDecorations.whiteCard,
+      child: ClipRRect(
+        borderRadius: AppRadius.brLg,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: child,
+        ),
+      ),
     );
   }
 }

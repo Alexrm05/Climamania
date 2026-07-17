@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_decorations.dart';
+import '../../../theme/app_spacing.dart';
 
 /// Tarjeta "Buscar eventos" (layoutSearch de activity_main).
 class SearchCard extends StatefulWidget {
@@ -23,45 +24,44 @@ class _SearchCardState extends State<SearchCard> {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
     return Container(
       decoration: AppDecorations.whiteCard,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Buscar eventos',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryDark,
-            ),
-          ),
-          const SizedBox(height: 8),
+          Text('Buscar eventos', style: t.titleSmall),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               Expanded(
                 child: Container(
                   height: 44,
                   decoration: AppDecorations.editText,
-                  alignment: Alignment.center,
-                  child: TextField(
-                    controller: _ctrl,
-                    textInputAction: TextInputAction.search,
-                    onSubmitted: widget.onSearch,
-                    style: const TextStyle(color: AppColors.black),
-                    decoration: const InputDecoration(
-                      hintText: 'Cliente, pedido, dirección, teléfono...',
-                      hintStyle: TextStyle(color: Colors.grey),
-                      prefixIcon: Icon(Icons.search, color: Colors.grey),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 10),
-                    ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.search,
+                          size: 20, color: AppColors.textMuted),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: _ctrl,
+                          textInputAction: TextInputAction.search,
+                          onSubmitted: widget.onSearch,
+                          style: const TextStyle(color: AppColors.textPrimary),
+                          decoration: AppDecorations.bareInput(
+                            hintText: 'Cliente, pedido, dirección, teléfono...',
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               SizedBox(
                 height: 44,
                 child: ElevatedButton(
@@ -72,10 +72,10 @@ class _SearchCardState extends State<SearchCard> {
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          const Text(
+          const SizedBox(height: AppSpacing.xs),
+          Text(
             'Introduce cualquier dato del evento y pulsa Buscar.',
-            style: TextStyle(fontSize: 12, color: AppColors.hintGray),
+            style: t.bodySmall?.copyWith(color: AppColors.textMuted),
           ),
         ],
       ),
