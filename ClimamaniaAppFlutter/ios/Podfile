@@ -39,5 +39,11 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # Algunos pods declaran deployment targets de iOS 9/11/13, que Xcode 27 ya no
+    # admite (mínimo 15.0) y hacen fallar el archivado. Se alinean con el de Runner.
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+    end
   end
 end
