@@ -273,26 +273,37 @@ class _ConformeScreenState extends State<ConformeScreen> {
   }
 
   Widget _decisionView() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return Column(
       children: [
-        _card(
-          '¿Requiere BOE?',
-          RadioGroup<bool>(
-            groupValue: _requiereBoe,
-            onChanged: (v) => setState(() => _requiereBoe = v ?? false),
-            child: const Column(
-              children: [
-                RadioListTile<bool>(
-                    value: true, title: Text('Sí requiere BOE')),
-                RadioListTile<bool>(
-                    value: false, title: Text('No requiere BOE')),
-              ],
-            ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _card(
+                '¿Requiere BOE?',
+                RadioGroup<bool>(
+                  groupValue: _requiereBoe,
+                  onChanged: (v) => setState(() => _requiereBoe = v ?? false),
+                  child: const Column(
+                    children: [
+                      RadioListTile<bool>(
+                          value: true, title: Text('Sí requiere BOE')),
+                      RadioListTile<bool>(
+                          value: false, title: Text('No requiere BOE')),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
-        _primaryButton('Continuar', _continuarDecision),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: _primaryButton('Continuar', _continuarDecision),
+          ),
+        ),
       ],
     );
   }
@@ -382,77 +393,199 @@ class _ConformeScreenState extends State<ConformeScreen> {
     );
   }
 
+  String _buildDocumentoTexto() {
+    final c = _conformidad;
+    final nombre =
+        [c?.nombre ?? '', c?.apellidos ?? ''].where((e) => e.isNotEmpty).join(' ');
+    final cpPob = [c?.cp ?? '', c?.poblacion ?? '']
+        .where((e) => e.isNotEmpty)
+        .join(' – ');
+    final sb = StringBuffer();
+    sb.writeln('D./Dña.: ${nombre.isNotEmpty ? nombre : '—'}');
+    sb.writeln('DNI/NIF: ${c?.dni.isNotEmpty == true ? c!.dni : '—'}');
+    sb.writeln('Dirección: ${c?.direccion.isNotEmpty == true ? c!.direccion : '—'}');
+    sb.writeln('CP – Población: ${cpPob.isNotEmpty ? cpPob : '—'}');
+    sb.writeln('Provincia: ${c?.provincia.isNotEmpty == true ? c!.provincia : '—'}');
+    sb.writeln('Referencia del pedido: ${widget.referencia}');
+    sb.writeln();
+    sb.writeln('CLIMAMANIA SALES SPAIN S.L.');
+    sb.writeln('CIF: B66040577');
+    sb.writeln('C/ Electrónica 14');
+    sb.writeln('08110 Montcada i Reixac (Barcelona)');
+    sb.writeln('Tel.: 933 282 421');
+    sb.writeln();
+    sb.writeln(
+        'Manifiesta mediante la firma del presente documento que CLIMAMANIA SALES SPAIN S.L. ha realizado la instalación en el domicilio situado en: '
+        '${c?.direccionInstalacion.isNotEmpty == true ? c!.direccionInstalacion : '—'}');
+    sb.writeln();
+    sb.writeln('La persona firmante declara que:');
+    sb.writeln(
+        '• La instalación ha sido finalizada conforme al presupuesto o encargo previamente aceptado.');
+    sb.writeln(
+        '• Ha podido revisar la instalación en presencia del personal instalador, comprobando el estado de los equipos y materiales suministrados.');
+    sb.writeln(
+        '• La instalación se encuentra terminada y correctamente ejecutada, no quedando trabajos pendientes por parte de CLIMAMANIA SALES SPAIN S.L., salvo aquellos que, en su caso, queden reflejados expresamente en el apartado de observaciones.');
+    sb.writeln(
+        '• Se encuentra conforme con la ubicación de los equipos instalados, el trazado de las canalizaciones, perforaciones, soportes, canaletas y demás elementos necesarios para la instalación.');
+    sb.writeln(
+        '• Los equipos instalados se encuentran en correcto estado y funcionamiento, o preparados para su puesta en marcha según corresponda al tipo de instalación realizada.');
+    sb.writeln();
+    sb.writeln(
+        'La persona firmante declara que ha revisado la instalación en presencia del instalador, no apreciando defectos visibles en el momento de la firma y prestando su conformidad con los trabajos realizados y el resultado final de la instalación.');
+    sb.writeln();
+    sb.writeln(
+        'La firma del presente documento implica la aceptación de la instalación realizada, por lo que cualquier reclamación posterior deberá referirse exclusivamente a defectos ocultos o incidencias no apreciables en el momento de la revisión y firma, salvo las que se hagan constar expresamente en el apartado de observaciones.');
+    sb.writeln();
+    sb.write(
+        'Asimismo, el cliente queda informado de que determinados equipos pueden requerir puesta en marcha, sellado de garantía o intervención del servicio técnico oficial del fabricante.');
+    return sb.toString();
+  }
+
   Widget _firmaView() {
     final esRep = _tipoFirmante == 'representante_autorizado';
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return Column(
       children: [
-        _card(
-          '¿Quién firma?',
-          RadioGroup<String>(
-            groupValue: _tipoFirmante,
-            onChanged: (v) => setState(() => _tipoFirmante = v ?? ''),
-            child: Column(
-              children: [
-                const RadioListTile<String>(
-                  value: 'cliente_titular',
-                  title: Text('Cliente / titular del pedido'),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _card(
+                'Documento de conformidad',
+                Text(
+                  _buildDocumentoTexto(),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-                const RadioListTile<String>(
-                  value: 'representante_autorizado',
-                  title: Text('Representante autorizado del cliente'),
-                ),
-                if (esRep) ...[
-                  const SizedBox(height: 8),
-                  _field('Nombre', _repNombreCtrl),
-                  const SizedBox(height: 8),
-                  _field('Apellidos', _repApellidosCtrl),
-                  const SizedBox(height: 8),
-                  _field('DNI', _repDniCtrl),
+              ),
+              _card('Observaciones', Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '(En este apartado podrán hacerse constar cualquier incidencia, trabajo pendiente o comentario por parte del instalador o del cliente.)',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    decoration: AppDecorations.editText,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: TextField(
+                      controller: _obsCtrl,
+                      minLines: 3,
+                      maxLines: 6,
+                      decoration: AppDecorations.bareInput(
+                          hintText: 'Escribe las observaciones',
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Firmado por:',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 10),
+                  RadioGroup<String>(
+                    groupValue: _tipoFirmante,
+                    onChanged: (v) => setState(() => _tipoFirmante = v ?? ''),
+                    child: Column(
+                      children: [
+                        const RadioListTile<String>(
+                          value: 'cliente_titular',
+                          title: Text('Cliente / titular del pedido'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        const RadioListTile<String>(
+                          value: 'representante_autorizado',
+                          title: Text('Representante autorizado del cliente'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        if (esRep) ...[
+                          const SizedBox(height: 8),
+                          _field('Nombre', _repNombreCtrl),
+                          const SizedBox(height: 8),
+                          _field('Apellidos', _repApellidosCtrl),
+                          const SizedBox(height: 8),
+                          _field('DNI', _repDniCtrl),
+                          const SizedBox(height: 10),
+                          Text(
+                            'En caso de firmar en representación del cliente: La persona firmante declara que actúa en nombre o con la autorización del cliente indicado en el presente documento, y que firma tras haber revisado la instalación y prestar su conformidad con los trabajos realizados.',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ],
-              ],
+              )),
+              _card('Firma', Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Y para que así conste, y en prueba de conformidad, se firma el presente documento mediante firma manuscrita electrónica en dispositivo digital, quedando registrada la fecha y hora de la firma.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Declaro haber leído el documento y estar conforme con su contenido antes de firmar',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryDark,
+                        ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Firma manuscrita electrónica:',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 220,
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      border: Border.all(color: AppColors.border),
+                      borderRadius: AppRadius.brMd,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Signature(
+                        controller: _sig, backgroundColor: Colors.white),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => setState(() => _sig.clear()),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: AppRadius.brMd),
+                        foregroundColor: AppColors.primaryDark,
+                      ),
+                      icon: const Icon(Icons.clear),
+                      label: const Text('Limpiar firma'),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'D./Dña.: ________________________________',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'DNI/NIF: ________________________________',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              )),
+            ],
+          ),
+        ),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: _primaryButton(
+              'Aceptar y firmar',
+              _processing ? null : _aceptar,
+              loading: _processing,
             ),
           ),
         ),
-        _card('Observaciones (opcional)', Container(
-          decoration: AppDecorations.editText,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: TextField(
-            controller: _obsCtrl,
-            minLines: 2,
-            maxLines: 5,
-            decoration: AppDecorations.bareInput(
-                contentPadding: const EdgeInsets.symmetric(vertical: 10)),
-          ),
-        )),
-        _card('Firma', Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              height: 220,
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                border: Border.all(color: AppColors.border),
-                borderRadius: AppRadius.brMd,
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Signature(
-                  controller: _sig, backgroundColor: Colors.white),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => setState(() => _sig.clear()),
-                icon: const Icon(Icons.clear),
-                label: const Text('Limpiar firma'),
-              ),
-            ),
-          ],
-        )),
-        const SizedBox(height: AppSpacing.xs),
-        _primaryButton('Aceptar y firmar', _processing ? null : _aceptar,
-            loading: _processing),
       ],
     );
   }

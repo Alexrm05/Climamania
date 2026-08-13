@@ -116,7 +116,9 @@ class _CerrarGestionScreenState extends State<CerrarGestionScreen> {
       appBar: AppBar(title: Text('Finalizar $_caso')),
       body: BusyOverlay(
         busy: _busy,
-        child: ListView(
+        child: SafeArea(
+          top: false,
+          child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             if (widget.cliente.isNotEmpty || widget.direccion.isNotEmpty) ...[
@@ -175,6 +177,7 @@ class _CerrarGestionScreenState extends State<CerrarGestionScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

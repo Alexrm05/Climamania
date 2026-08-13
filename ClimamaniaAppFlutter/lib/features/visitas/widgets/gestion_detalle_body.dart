@@ -161,6 +161,8 @@ class GestionDetalleBody extends StatelessWidget {
                 'Solicitada ${Fecha.parse(v.fechaSolicitud)}'),
           if (v.solicitante.isNotEmpty)
             _info(context, Icons.person_outline, 'Solicita ${v.solicitante}'),
+          if (v.referencia.isNotEmpty)
+            _infoRef(context, v.referencia),
           const SizedBox(height: AppSpacing.md),
           _gestionarButton(context),
         ],
@@ -181,6 +183,24 @@ class GestionDetalleBody extends StatelessWidget {
             child: Text(value,
                 style: t.bodyMedium?.copyWith(color: AppColors.textPrimary)),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoRef(BuildContext context, String ref) {
+    final t = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        children: [
+          Icon(Icons.tag_outlined, size: 18, color: AppColors.primary),
+          const SizedBox(width: AppSpacing.sm),
+          Text('Pedido ',
+              style: t.bodyMedium?.copyWith(color: AppColors.textMuted)),
+          Text(ref,
+              style: t.bodyMedium?.copyWith(
+                  color: AppColors.primary, fontWeight: FontWeight.w600)),
         ],
       ),
     );

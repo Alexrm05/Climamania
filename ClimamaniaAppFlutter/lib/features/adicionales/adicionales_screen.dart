@@ -411,126 +411,137 @@ class _AdicionalesScreenState extends State<AdicionalesScreen> {
   // ---------- Nuevo tab ----------
 
   Widget _nuevo() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+    return Column(
       children: [
-        _card('Datos del cliente', Column(
-          children: [
-            _field('Referencia / pedido (opcional)', _refCtrl),
-            const SizedBox(height: 10),
-            SizedBox(
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+            children: [
+              _card('Datos del cliente', Column(
+                children: [
+                  _field('Referencia / pedido (opcional)', _refCtrl),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 46,
+                    child: ElevatedButton.icon(
+                      onPressed: _cargandoRef ? null : _cargarReferencia,
+                      style: AppDecorations.orangeButtonStyle,
+                      icon: _cargandoRef
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: AppColors.white))
+                          : const Icon(Icons.search),
+                      label: const Text('Cargar datos del pedido'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _field('Nombre del cliente', _nombreCtrl),
+                  const SizedBox(height: 8),
+                  _field('Email del cliente', _emailCtrl,
+                      keyboard: TextInputType.emailAddress),
+                  const SizedBox(height: 8),
+                  _field('Teléfono', _telefonoCtrl, keyboard: TextInputType.phone),
+                ],
+              )),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: _guardando ? null : _limpiarFormulario,
+                  style: AppDecorations.redButton,
+                  icon: const Icon(Icons.delete_sweep_outlined, size: 20),
+                  label: const Text('Limpiar formulario'),
+                ),
+              ),
+              _card('Catálogo', Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _field('Buscar artículo (código o descripción)', _catalogoCtrl,
+                      onChanged: _onCatalogoChanged),
+                  if (_buscandoCatalogo)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 10),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  for (final p in _resultadosCatalogo) _resultadoCatalogo(p),
+                  // Sin búsqueda activa: acceso rápido a los 5 más usados.
+                  if (!_buscandoCatalogo &&
+                      _catalogoCtrl.text.trim().isEmpty &&
+                      _resultadosCatalogo.isEmpty &&
+                      _masUsados.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 2),
+                      child: Text('Más usados',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleSmall
+                              ?.copyWith(color: AppColors.textSecondary)),
+                    ),
+                    for (final p in _masUsados) _resultadoCatalogo(p),
+                  ],
+                ],
+              )),
+              if (_lineas.isNotEmpty)
+                _card('Líneas del presupuesto', Column(
+                  children: [for (final l in _lineas) _lineaWidget(l)],
+                )),
+              _card('Totales', Column(
+                children: [
+                  _totalRow('Subtotal (sin IVA)', _totalSinIva),
+                  _totalRow('IVA', _totalIva),
+                  _totalRow('Total (con IVA)', _totalConIva, bold: true),
+                ],
+              )),
+              _card('Firma del cliente', Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      border: Border.all(color: AppColors.border),
+                      borderRadius: AppRadius.brMd,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Signature(controller: _sig, backgroundColor: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => setState(() => _sig.clear()),
+                      icon: const Icon(Icons.clear),
+                      label: const Text('Limpiar firma'),
+                    ),
+                  ),
+                ],
+              )),
+            ],
+          ),
+        ),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            child: SizedBox(
               width: double.infinity,
-              height: 46,
-              child: ElevatedButton.icon(
-                onPressed: _cargandoRef ? null : _cargarReferencia,
-                style: AppDecorations.orangeButtonStyle,
-                icon: _cargandoRef
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _guardando ? null : _guardar,
+                style: AppDecorations.greenButton,
+                child: _guardando
                     ? const SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: AppColors.white))
-                    : const Icon(Icons.search),
-                label: const Text('Cargar datos del pedido'),
+                    : const Text('Aceptar y guardar presupuesto'),
               ),
             ),
-            const SizedBox(height: 8),
-            _field('Nombre del cliente', _nombreCtrl),
-            const SizedBox(height: 8),
-            _field('Email del cliente', _emailCtrl,
-                keyboard: TextInputType.emailAddress),
-            const SizedBox(height: 8),
-            _field('Teléfono', _telefonoCtrl, keyboard: TextInputType.phone),
-          ],
-        )),
-        const SizedBox(height: 10),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: OutlinedButton.icon(
-            onPressed: _guardando ? null : _limpiarFormulario,
-            style: AppDecorations.redButton,
-            icon: const Icon(Icons.delete_sweep_outlined, size: 20),
-            label: const Text('Limpiar formulario'),
-          ),
-        ),
-        _card('Catálogo', Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _field('Buscar artículo (código o descripción)', _catalogoCtrl,
-                onChanged: _onCatalogoChanged),
-            if (_buscandoCatalogo)
-              const Padding(
-                padding: EdgeInsets.only(top: 10),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            for (final p in _resultadosCatalogo) _resultadoCatalogo(p),
-            // Sin búsqueda activa: acceso rápido a los 5 más usados.
-            if (!_buscandoCatalogo &&
-                _catalogoCtrl.text.trim().isEmpty &&
-                _resultadosCatalogo.isEmpty &&
-                _masUsados.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.only(top: 12, bottom: 2),
-                child: Text('Más usados',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(color: AppColors.textSecondary)),
-              ),
-              for (final p in _masUsados) _resultadoCatalogo(p),
-            ],
-          ],
-        )),
-        if (_lineas.isNotEmpty)
-          _card('Líneas del presupuesto', Column(
-            children: [for (final l in _lineas) _lineaWidget(l)],
-          )),
-        _card('Totales', Column(
-          children: [
-            _totalRow('Subtotal (sin IVA)', _totalSinIva),
-            _totalRow('IVA', _totalIva),
-            _totalRow('Total (con IVA)', _totalConIva, bold: true),
-          ],
-        )),
-        _card('Firma del cliente', Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                border: Border.all(color: AppColors.border),
-                borderRadius: AppRadius.brMd,
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Signature(controller: _sig, backgroundColor: Colors.white),
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => setState(() => _sig.clear()),
-                icon: const Icon(Icons.clear),
-                label: const Text('Limpiar firma'),
-              ),
-            ),
-          ],
-        )),
-        const SizedBox(height: 4),
-        SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton(
-            onPressed: _guardando ? null : _guardar,
-            style: AppDecorations.greenButton,
-            child: _guardando
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.white))
-                : const Text('Aceptar y guardar presupuesto'),
           ),
         ),
       ],

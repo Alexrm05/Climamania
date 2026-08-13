@@ -136,53 +136,64 @@ class _InstallScreenState extends State<InstallScreen> {
     return Scaffold(
       backgroundColor: AppColors.primaryLight,
       appBar: AppBar(title: const Text('Realizar instalación')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+      body: Column(
         children: [
-          _header(),
-          const SizedBox(height: AppSpacing.md),
-          _notas(),
-          const SizedBox(height: AppSpacing.md),
-          _seccion(
-            'Fotografías y documentación',
-            Column(
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
-                _fotoRow('Fotos previas', 'previas', 'PREINST'),
-                _rowDivider(),
-                _fotoRow('Fotos incidencias', 'incidencias', 'DURINST'),
-                _rowDivider(),
-                _fotoRow('Fotos acabada', 'acabada', 'POSTINST'),
-                _rowDivider(),
-                _fotoRow('Fotos conforme', 'conforme', 'CONFCLI'),
-                _rowDivider(),
-                _fotoRow('Documento BOE', 'boe', 'DOCUBOE'),
+                _header(),
+                const SizedBox(height: AppSpacing.md),
+                _notas(),
+                const SizedBox(height: AppSpacing.md),
+                _seccion(
+                  'Fotografías y documentación',
+                  Column(
+                    children: [
+                      _fotoRow('Fotos previas', 'previas', 'PREINST'),
+                      _rowDivider(),
+                      _fotoRow('Fotos incidencias', 'incidencias', 'DURINST'),
+                      _rowDivider(),
+                      _fotoRow('Fotos acabada', 'acabada', 'POSTINST'),
+                      _rowDivider(),
+                      _fotoRow('Fotos conforme', 'conforme', 'CONFCLI'),
+                      _rowDivider(),
+                      _fotoRow('Documento BOE', 'boe', 'DOCUBOE'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _seccion(
+                  'Acciones',
+                  Column(
+                    children: [
+                      _accionRow('Añadir comentarios', 'Notas para el pedido',
+                          Icons.chat_outlined, AppColors.successFg,
+                          AppColors.successTint, _anadirComentario),
+                      _rowDivider(),
+                      _accionRow('Firma conforme cliente', 'Recoge la conformidad',
+                          Icons.draw_outlined, AppColors.infoFg, AppColors.infoTint,
+                          _firmaConforme),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          _seccion(
-            'Acciones',
-            Column(
-              children: [
-                _accionRow('Añadir comentarios', 'Notas para el pedido',
-                    Icons.chat_outlined, AppColors.successFg,
-                    AppColors.successTint, _anadirComentario),
-                _rowDivider(),
-                _accionRow('Firma conforme cliente', 'Recoge la conformidad',
-                    Icons.draw_outlined, AppColors.infoFg, AppColors.infoTint,
-                    _firmaConforme),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton.icon(
-              onPressed: _finalizar,
-              style: AppDecorations.greenButton,
-              icon: const Icon(Icons.check_circle_outline),
-              label: const Text('Finalizar instalación'),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _finalizar,
+                  style: AppDecorations.greenButton,
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('Finalizar instalación'),
+                ),
+              ),
             ),
           ),
         ],

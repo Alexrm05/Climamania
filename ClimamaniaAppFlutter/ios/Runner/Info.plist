@@ -7,7 +7,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>ClimaManiaApp</string>
+		<string>CLMInstal</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -78,6 +78,8 @@
 		<key>NSPhotoLibraryAddUsageDescription</key>
 		<string>ClimaMania necesita guardar imágenes en tu galería.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>ClimaMania usa tu ubicación para registrar la posición de la instalación.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 		<string>ClimaMania usa tu ubicación para registrar la posición de la instalación.</string>
 		<!-- ATS: el API y la web van por HTTPS; se permiten excepciones por dominio
 	     (subdominios incluidos) por si el WebView carga algún recurso http. -->
