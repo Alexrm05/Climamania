@@ -1,0 +1,81 @@
+name: iOS Release
+
+# Compila el IPA y lo sube a App Store Connect desde un runner macOS de GitHub.
+# Motivo: el Mac de desarrollo corre macOS beta y Apple rechaza los binarios
+# construidos con software beta ("Archivo binario no válido" / ITMS-90111).
+# Los runners de GitHub usan macOS y Xcode públicos, que es lo que Apple exige.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    env:
+      APP_DIR: ClimamaniaAppFlutter
+      BUNDLE_ID: com.climamania.clminstal
+      # Leídas automáticamente por las herramientas de codemagic-cli-tools.
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Entorno de compilación
+        run: |
+          sw_vers
+          xcodebuild -version
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.9'
+          channel: stable
+
+      - name: Herramientas de firma
+        run: pipx install codemagic-cli-tools
+
+      - name: Certificados y perfiles
+        # Los descarga (o crea) desde App Store Connect con la API key y deja el
+        # proyecto en firma manual, que es lo que necesita un build sin interfaz.
+        run: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE --create
+          keychain initialize
+          keychain add-certificates
+          xcode-project use-profiles
+        working-directory: ${{ env.APP_DIR }}/ios
+
+      - name: Dependencias
+        run: flutter pub get
+        working-directory: ${{ env.APP_DIR }}
+
+      - name: Compilar IPA
+        # use-profiles deja el plist de exportación en ~/export_options.plist
+        run: |
+          flutter build ipa --release \
+            --export-options-plist="$HOME/export_options.plist"
+        working-directory: ${{ env.APP_DIR }}
+
+      - name: Comprobar que el binario no es beta
+        # Si esto falla, el runner traía software beta y no serviría de nada subirlo.
+        run: |
+          APP=$(ls -d build/ios/ipa/../archive/Runner.xcarchive/Products/Applications/*.app)
+          echo "--- metadatos del binario ---"
+          plutil -p "$APP/Info.plist" | grep -E 'DTSDKName|DTXcode|BuildMachineOSBuild|CFBundleVersion'
+        working-directory: ${{ env.APP_DIR }}
+
+      - name: Subir a App Store Connect
+        run: app-store-connect publish --path "build/ios/ipa/*.ipa"
+        working-directory: ${{ env.APP_DIR }}
+
+      - name: Guardar el IPA como artefacto
+        # Por si la subida falla: así puedes descargarlo y subirlo con Transporter.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipa
+          path: ${{ env.APP_DIR }}/build/ios/ipa/*.ipa
+          if-no-files-found: ignore
