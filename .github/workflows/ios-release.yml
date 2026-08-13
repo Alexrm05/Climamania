@@ -48,10 +48,12 @@ jobs:
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
-            --create
+            --create \
+            --delete-stale-profiles
           keychain initialize
-          keychain add-certificates \
-            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY"
+          # add-certificates sin argumentos: coge los .p12 que el paso anterior
+          # dejó en ~/Library/Developer/Xcode/UserData/Certificates.
+          keychain add-certificates
           xcode-project use-profiles
         working-directory: ${{ env.APP_DIR }}/ios
 
