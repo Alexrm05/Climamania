@@ -40,11 +40,18 @@ jobs:
       - name: Certificados y perfiles
         # Los descarga (o crea) desde App Store Connect con la API key y deja el
         # proyecto en firma manual, que es lo que necesita un build sin interfaz.
+        # --certificate-key es la clave RSA con la que se emite y se guarda el
+        # certificado de distribución; sin ella la herramienta no puede guardarlo.
+        env:
+          CERTIFICATE_PRIVATE_KEY: ${{ secrets.CERTIFICATE_PRIVATE_KEY }}
         run: |
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE --create
+            --type IOS_APP_STORE \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
+            --create
           keychain initialize
-          keychain add-certificates
+          keychain add-certificates \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY"
           xcode-project use-profiles
         working-directory: ${{ env.APP_DIR }}/ios
 
