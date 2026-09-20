@@ -50,7 +50,10 @@ try {
             "previas" => [],
             "incidencias" => [],
             "acabada" => [],
-            "documentos" => []
+            "documentos" => [],
+            "retirado" => [],
+            "conservado" => [],
+            "declaracion" => []
         ],
         "conformidad" => [
             "cliente" => [
@@ -243,6 +246,12 @@ try {
     $pedido["fotografias"]["conforme"] = fetchFotosByClave($pdo, $referencia, ["CONFCLI", "DOCCLI"]);
     $pedido["fotografias"]["boe"] = fetchFotosByClave($pdo, $referencia, ["DOCUBOE"]);
     $pedido["fotografias"]["documentos"] = fetchFotosByClave($pdo, $referencia, ["DOC", "DOCUBOE", "CONFCLI", "DOCCLI"]);
+    // Control de equipos desinstalados: equipo que se lleva ClimaMania y
+    // componentes que se queda el cliente.
+    $pedido["fotografias"]["retirado"] = fetchFotosByClave($pdo, $referencia, ["RETIRADO"]);
+    $pedido["fotografias"]["conservado"] = fetchFotosByClave($pdo, $referencia, ["CONSERVA"]);
+    // PDF "Declaración del cliente sobre equipo desinstalado" (firmado).
+    $pedido["fotografias"]["declaracion"] = fetchFotosByClave($pdo, $referencia, ["DECLEQ"]);
 
     // Si no hay datos en ningún sitio, devolvemos error controlado
     $hasData = $ev || $ps || !empty($pedido["detalle_pedido"]);

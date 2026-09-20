@@ -107,6 +107,32 @@ class InstallRepository {
     }
   }
 
+  /// "Declaración del cliente sobre equipo desinstalado": se firma cuando el
+  /// cliente conserva total o parcialmente el equipo. Mismo contrato que el
+  /// conforme (idempotente por submission_token).
+  Future<({bool ok, String message, String pdfUrl, String token})>
+      generarDeclaracionEquipoPdf(Map<String, String> payload) async {
+    try {
+      final json =
+          await _api.postForm(AppConfig.generarDeclaracionEquipoPdf, payload);
+      return (
+        ok: json['success'] == true,
+        message: _s(json['message']),
+        pdfUrl: _s(json['pdf_url']),
+        token: _s(json['submission_token']).isNotEmpty
+            ? _s(json['submission_token'])
+            : (payload['submission_token'] ?? ''),
+      );
+    } catch (_) {
+      return (
+        ok: false,
+        message: 'Error de conexión al generar la declaración',
+        pdfUrl: '',
+        token: payload['submission_token'] ?? '',
+      );
+    }
+  }
+
   Future<({bool ok, String message, String pdfUrl})> generarBoePdf(
       Map<String, String> payload) async {
     try {

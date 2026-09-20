@@ -105,7 +105,9 @@ function conformidad_decode_signature_base64(string $firmaBase64): string
     return $binary;
 }
 
-function conformidad_find_document_by_token(PDO $pdo, string $submissionToken): ?array
+// $clave permite reutilizar estas funciones para otros documentos firmados
+// (p. ej. la declaración de equipo desinstalado, clave DECLEQ).
+function conformidad_find_document_by_token(PDO $pdo, string $submissionToken, string $clave = "CONFCLI"): ?array
 {
     $token = conformidad_normalize_token($submissionToken);
     if ($token === "") {
@@ -115,12 +117,12 @@ function conformidad_find_document_by_token(PDO $pdo, string $submissionToken): 
     $stmt = $pdo->prepare(
         "SELECT Documento
          FROM ClimaInstal_Fotografias
-         WHERE Clave = 'CONFCLI'
+         WHERE Clave = :clave
            AND TokenEvento = :token
          LIMIT 1"
     );
     try {
-        $stmt->execute([":token" => $token]);
+        $stmt->execute([":clave" => $clave, ":token" => $token]);
     } catch (PDOException $e) {
         if ($e->getCode() === "42S22") {
             throw new RuntimeException("Falta la columna TokenEvento en ClimaInstal_Fotografias. Ejecuta el SQL de la fase 10.");
@@ -140,7 +142,7 @@ function conformidad_find_document_by_token(PDO $pdo, string $submissionToken): 
     ];
 }
 
-function conformidad_register_document(PDO $pdo, string $storedPath, string $submissionToken): bool
+function conformidad_register_document(PDO $pdo, string $storedPath, string $submissionToken, string $clave = "CONFCLI"): bool
 {
     $token = conformidad_normalize_token($submissionToken);
     if ($token === "") {
@@ -154,12 +156,13 @@ function conformidad_register_document(PDO $pdo, string $storedPath, string $sub
 
     $stmt = $pdo->prepare(
         "INSERT INTO ClimaInstal_Fotografias (Documento, Clave, TokenEvento, Fecha)
-         VALUES (:doc, 'CONFCLI', :token, NOW())"
+         VALUES (:doc, :clave, :token, NOW())"
     );
 
     try {
         $stmt->execute([
             ":doc" => $storedDoc,
+            ":clave" => $clave,
             ":token" => $token
         ]);
     } catch (PDOException $e) {
@@ -174,8 +177,13 @@ function conformidad_register_document(PDO $pdo, string $storedPath, string $sub
     return true;
 }
 
-function conformidad_store_pdf(string $referencia, string $submissionToken, string $pdfBinary): array
-{
+function conformidad_store_pdf(
+    string $referencia,
+    string $submissionToken,
+    string $pdfBinary,
+    string $subdir = "DocConformeCliente",
+    string $sufijo = "DOCCLI"
+): array {
     $ref = presup_normalize_text($referencia, 64);
     if ($ref === "") {
         throw new InvalidArgumentException("Referencia requerida");
@@ -186,20 +194,20 @@ function conformidad_store_pdf(string $referencia, string $submissionToken, stri
     }
 
     $imagesRoot = presup_resolve_images_root();
-    $targetDir = rtrim($imagesRoot, "/") . "/DocConformeCliente";
+    $targetDir = rtrim($imagesRoot, "/") . "/" . $subdir;
     presup_ensure_dir($targetDir);
 
     $tokenShort = substr($token, 0, 12);
     if ($tokenShort === "") {
         $tokenShort = "TOKEN";
     }
-    $fileName = $ref . "-DOCCLI-" . date("YmdHis") . "-" . $tokenShort . ".pdf";
+    $fileName = $ref . "-" . $sufijo . "-" . date("YmdHis") . "-" . $tokenShort . ".pdf";
     $absolutePath = $targetDir . "/" . $fileName;
     if (file_put_contents($absolutePath, $pdfBinary) === false) {
-        throw new RuntimeException("No se pudo guardar el PDF del conforme");
+        throw new RuntimeException("No se pudo guardar el PDF (" . $sufijo . ")");
     }
 
-    $relativePath = "imagenes/DocConformeCliente/" . $fileName;
+    $relativePath = "imagenes/" . $subdir . "/" . $fileName;
     return [
         "absolute_path" => $absolutePath,
         "relative_path" => $relativePath,

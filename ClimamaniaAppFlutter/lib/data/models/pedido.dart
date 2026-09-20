@@ -67,6 +67,14 @@ class DetalleLinea {
         referencia: UiText.sanitizeDbValue(j['product_reference']?.toString()),
         nombre: UiText.sanitizeDbValue(j['product_name']?.toString()),
       );
+
+  /// Referencias de PrestaShop que marcan una línea de equipo desinstalado.
+  /// Conviven las dos grafías porque ambas existen en el catálogo.
+  static const referenciasDesinstalacion = {'DESINTDO', 'DESINSTDO'};
+
+  /// La línea corresponde a la retirada de un equipo desinstalado.
+  bool get esEquipoDesinstalado =>
+      referenciasDesinstalacion.contains(referencia.trim().toUpperCase());
 }
 
 /// Comentario del instalador.
@@ -100,6 +108,11 @@ class Fotografias {
   final List<String> conforme;
   final List<String> boe;
   final List<String> documentos;
+  /// Control de equipos desinstalados (claves RETIRADO / CONSERVA / DECLEQ).
+  final List<String> retirado;
+  final List<String> conservado;
+  /// PDF "Declaración del cliente sobre equipo desinstalado", ya firmado.
+  final List<String> declaracion;
 
   const Fotografias({
     required this.cliente,
@@ -109,6 +122,9 @@ class Fotografias {
     required this.conforme,
     required this.boe,
     required this.documentos,
+    this.retirado = const [],
+    this.conservado = const [],
+    this.declaracion = const [],
   });
 
   factory Fotografias.fromJson(Map<String, dynamic> j) {
@@ -131,11 +147,20 @@ class Fotografias {
       conforme: l('conforme'),
       boe: l('boe'),
       documentos: l('documentos'),
+      retirado: l('retirado'),
+      conservado: l('conservado'),
+      declaracion: l('declaracion'),
     );
   }
 
   List<String> byCategoria(String cat) {
     switch (cat) {
+      case 'retirado':
+        return retirado;
+      case 'conservado':
+        return conservado;
+      case 'declaracion':
+        return declaracion;
       case 'cliente':
         return cliente;
       case 'previas':
@@ -234,6 +259,14 @@ class Pedido {
     required this.fotografias,
     this.conformidad,
   });
+
+  /// Líneas del pedido que corresponden a equipos desinstalados (DESINTDO /
+  /// DESINSTDO). Si hay alguna, la instalación debe mostrar el apartado de
+  /// "Equipo desinstalado / Retirada".
+  List<DetalleLinea> get lineasDesinstalacion =>
+      detallePedido.where((l) => l.esEquipoDesinstalado).toList();
+
+  bool get tieneEquipoDesinstalado => lineasDesinstalacion.isNotEmpty;
 
   factory Pedido.fromJson(Map<String, dynamic> j) {
     String s(String k) => UiText.sanitizeDbValue(j[k]?.toString());

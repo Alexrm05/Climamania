@@ -30,6 +30,8 @@ class AppConfig {
   static const String finalizarInstalacion = 'finalizar_instalacion.php';
   static const String generarConformePdf = 'generar_conforme_cliente_pdf.php';
   static const String generarBoePdf = 'generar_boe_pdf.php';
+  static const String generarDeclaracionEquipoPdf =
+      'generar_declaracion_equipo_pdf.php';
   static const String getBoeEquipos = 'get_boe_equipos_revision.php';
   static const String guardarBoeEquipos = 'guardar_boe_equipos_revision.php';
   static const String enviarDocumentacion =
