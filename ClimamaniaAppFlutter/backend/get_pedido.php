@@ -55,6 +55,8 @@ try {
             "conservado" => [],
             "declaracion" => []
         ],
+        // Escandallo (parte de materiales): resumen para saber si está hecho.
+        "parte_materiales" => null,
         "conformidad" => [
             "cliente" => [
                 "nombre" => "",
@@ -237,6 +239,32 @@ try {
     );
     $stmt->execute([":ref" => $referencia]);
     $pedido["comentarios_instalador"] = $stmt->fetchAll();
+
+    // Escandallo: resumen del parte de materiales (si la tabla aún no existe,
+    // se deja a null para no romper la ficha).
+    try {
+        $stmtPm = $pdo->prepare(
+            "SELECT COUNT(*) AS n, MIN(hora_inicio) AS hi, MAX(hora_final) AS hf,
+                    MAX(fecha_edicion) AS fe, MAX(usuario) AS u
+             FROM ClimaInstal_ParteMateriales
+             WHERE pedido = :ref"
+        );
+        $stmtPm->execute([":ref" => $referencia]);
+        $pm = $stmtPm->fetch(PDO::FETCH_ASSOC);
+        if ($pm && (int)$pm["n"] > 0) {
+            $pedido["parte_materiales"] = [
+                "num_lineas" => (int)$pm["n"],
+                "hora_inicio" => substr((string)($pm["hi"] ?? ""), 0, 5),
+                "hora_final" => substr((string)($pm["hf"] ?? ""), 0, 5),
+                "fecha_edicion" => (string)($pm["fe"] ?? ""),
+                "usuario" => (string)($pm["u"] ?? "")
+            ];
+        }
+    } catch (PDOException $e) {
+        if ($e->getCode() !== "42S02") {
+            throw $e;
+        }
+    }
 
     // Fotografías (por clave)
     $pedido["fotografias"]["cliente"] = fetchFotosByClave($pdo, $referencia, ["FOTOCLI"]);

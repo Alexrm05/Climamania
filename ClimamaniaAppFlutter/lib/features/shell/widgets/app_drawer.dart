@@ -80,6 +80,14 @@ class AppDrawer extends StatelessWidget {
               onTap: () => _goBranch(context, 1),
             ),
             _DrawerItem(
+              icon: Icons.inventory_2_outlined,
+              label: 'Partes de trabajo',
+              onTap: () {
+                Navigator.of(context).pop();
+                context.push('/partes-materiales');
+              },
+            ),
+            _DrawerItem(
                 icon: Icons.language,
                 label: 'Web ClimaMania',
                 onTap: () => _goBranch(context, 4)),

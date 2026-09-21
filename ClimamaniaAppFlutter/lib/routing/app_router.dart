@@ -11,6 +11,8 @@ import '../features/incidencias/incidencias_pendientes_screen.dart';
 import '../features/login/login_screen.dart';
 import '../features/install/conforme_screen.dart';
 import '../features/install/declaracion_equipo_screen.dart';
+import '../features/install/escandallo_screen.dart';
+import '../features/install/partes_materiales_screen.dart';
 import '../features/install/finalizar_screen.dart';
 import '../features/install/install_screen.dart';
 import '../features/pedido/pedido_detail_screen.dart';
@@ -125,6 +127,21 @@ GoRouter createRouter(SessionService session) {
             referencia: _refOr(e['referencia']),
             cliente: (e['cliente'] ?? '').toString(),
           );
+        },
+      ),
+      // Escandallo: histórico de partes y totales por artículo (menú lateral).
+      GoRoute(
+        path: '/partes-materiales',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PartesMaterialesScreen(),
+      ),
+      // Escandallo: parte de trabajo de un pedido (material y horas).
+      GoRoute(
+        path: '/escandallo',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final e = state.extra is Map ? state.extra as Map : const {};
+          return EscandalloScreen(referencia: _refOr(e['referencia']));
         },
       ),
       // Declaración del cliente sobre equipo desinstalado (rama NO de la

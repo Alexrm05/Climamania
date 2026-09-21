@@ -63,6 +63,13 @@ class AppConfig {
   static const String getAdicionalesMasUsados =
       'get_adicionales_mas_usados.php';
   static const String getPresupuestos = 'get_presupuestos_instalador.php';
+
+  // Escandallo: parte de materiales gastados por instalación.
+  // El catálogo reutiliza get_adicionales_catalogo.php con categoria=711.
+  static const int categoriaMateriales = 711;
+  static const String getParteMateriales = 'get_parte_materiales.php';
+  static const String guardarParteMateriales = 'guardar_parte_materiales.php';
+  static const String getPartesMateriales = 'get_partes_materiales.php';
   static const String getPresupuestoDetalle =
       'get_presupuesto_instalador_detalle.php';
   static const String actualizarPresupuesto =

@@ -22,6 +22,11 @@ if (!isset($_GET["api_key"]) || trim((string)$_GET["api_key"]) !== $API_KEY) {
 }
 
 $query = trim((string)($_GET["q"] ?? ""));
+// Categoría de PrestaShop: 632 = adicionales (por defecto), 711 = materiales
+// del escandallo. Solo se admiten esas dos.
+$categoriasPermitidas = [632, 711];
+$categoriaRaw = (int)trim((string)($_GET["categoria"] ?? "632"));
+$categoriaId = in_array($categoriaRaw, $categoriasPermitidas, true) ? $categoriaRaw : 632;
 $limitRaw = trim((string)($_GET["limit"] ?? "0"));
 $limit = is_numeric($limitRaw) ? (int)$limitRaw : 0;
 if ($limit < 0) {
@@ -33,7 +38,7 @@ try {
     $psPrefix = resolvePsPrefix($psPdo, $PS_PREFIX);
     $shopId = resolveDefaultShopId($psPdo, $psPrefix);
     $langId = resolveDefaultLangId($psPdo, $psPrefix, $shopId);
-    $categoryIds = [632];
+    $categoryIds = [$categoriaId];
 
     $idsOrdered = fetchProductIdsBySearch($psPdo, $psPrefix, $shopId, $categoryIds, $query, $limit);
     if (empty($idsOrdered)) {

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/widgets/status_badge.dart';
+import '../../data/models/parte_materiales.dart';
 import '../../data/models/pedido.dart';
 import '../../data/models/retirada_equipo.dart';
 import '../../data/repositories/pedido_repository.dart';
@@ -218,15 +219,22 @@ class _InstallScreenState extends State<InstallScreen> {
             top: false,
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton.icon(
-                  onPressed: _finalizar,
-                  style: AppDecorations.greenButton,
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('Finalizar instalación'),
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _botonEscandallo(),
+                  const SizedBox(height: AppSpacing.sm),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _finalizar,
+                      style: AppDecorations.greenButton,
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('Finalizar instalación'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -346,6 +354,67 @@ class _InstallScreenState extends State<InstallScreen> {
   }
 
   Widget _rowDivider() => const Divider(height: 1, color: AppColors.border);
+
+  /// Escandallo: botón fijo sobre "Finalizar". Rojo hasta que se registra;
+  /// después muestra materiales y horas y permite modificarlo.
+  Widget _botonEscandallo() {
+    final pm = _pedido?.parteMateriales;
+    final hecho = pm?.hecho ?? false;
+    final min = hecho ? minutosEntre(pm!.horaInicio, pm.horaFinal) : null;
+    final subtitulo = hecho
+        ? '${pm!.numLineas} material${pm.numLineas == 1 ? '' : 'es'}'
+            '${min != null ? ' · ${formatoHoras(min)} en domicilio' : ''}'
+        : 'Pendiente: materiales gastados y horas en el domicilio';
+    final fg = hecho ? AppColors.successFg : AppColors.errorFg;
+    final bg = hecho ? AppColors.successTint : AppColors.errorTint;
+    return Material(
+      color: bg,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.brMd,
+        side: BorderSide(color: fg, width: 1.5),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: _abrirEscandallo,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md, vertical: 10),
+          child: Row(
+            children: [
+              Icon(hecho ? Icons.check_circle : Icons.inventory_2_outlined,
+                  color: fg, size: 26),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Escandallo de materiales',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(color: fg, fontWeight: FontWeight.w700)),
+                    Text(subtitulo,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: fg)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: fg),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _abrirEscandallo() async {
+    final guardado = await context.push<bool>('/escandallo', extra: {
+      'referencia': widget.referencia,
+    });
+    if (mounted && guardado == true) _cargarEstadoFotos();
+  }
 
   /// Apartado obligatorio cuando el pedido incluye equipos desinstalados.
   /// De momento muestra las líneas afectadas; el resto del control se

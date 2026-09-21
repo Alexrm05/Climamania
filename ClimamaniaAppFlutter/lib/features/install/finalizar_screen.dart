@@ -34,6 +34,8 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
   // Fotos requeridas que faltan.
   List<String> _faltan = [];
   bool _fotosCargadas = false;
+  // Escandallo (parte de materiales) sin registrar.
+  bool _sinEscandallo = false;
 
   @override
   void initState() {
@@ -63,6 +65,8 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
       }
       setState(() {
         _faltan = faltan;
+        _sinEscandallo =
+            res.pedido != null && !(res.pedido!.parteMateriales?.hecho ?? false);
         _fotosCargadas = true;
       });
     } catch (_) {
@@ -148,6 +152,7 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
+          if (_fotosCargadas && _sinEscandallo) _avisoEscandallo(),
           if (_fotosCargadas) _avisoFotos(),
           _card('Cobro', Column(
             children: [
@@ -231,6 +236,61 @@ class _FinalizarScreenState extends State<FinalizarScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Escandallo sin registrar: más llamativo que el aviso de fotos (fondo
+  /// rojo sólido) y con acceso directo para hacerlo desde aquí. No bloquea.
+  Widget _avisoEscandallo() {
+    final t = Theme.of(context).textTheme;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.errorFg,
+        borderRadius: AppRadius.brMd,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.inventory_2_outlined,
+                  color: AppColors.white, size: 30),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text('ESCANDALLO SIN REGISTRAR',
+                    style: t.titleMedium?.copyWith(
+                        color: AppColors.white, fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'No has registrado los materiales gastados ni las horas en el domicilio de esta instalación.',
+            style: t.bodyMedium?.copyWith(color: AppColors.white),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                final guardado = await context.push<bool>('/escandallo',
+                    extra: {'referencia': widget.referencia});
+                if (mounted && guardado == true) _cargarFotosFaltantes();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.white,
+                foregroundColor: AppColors.errorFg,
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.brMd),
+              ),
+              icon: const Icon(Icons.edit_note),
+              label: const Text('Registrar escandallo ahora'),
+            ),
+          ),
+        ],
       ),
     );
   }

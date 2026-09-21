@@ -1,4 +1,5 @@
 import '../../core/ui_text.dart';
+import 'parte_materiales.dart';
 
 /// Contacto de facturación o entrega.
 class Contacto {
@@ -241,6 +242,8 @@ class Pedido {
   final List<ComentarioInstalador> comentarios;
   final Fotografias fotografias;
   final ConformidadCliente? conformidad;
+  /// Escandallo (parte de materiales); null si aún no se ha registrado.
+  final ParteMaterialesResumen? parteMateriales;
 
   const Pedido({
     required this.referencia,
@@ -258,6 +261,7 @@ class Pedido {
     required this.comentarios,
     required this.fotografias,
     this.conformidad,
+    this.parteMateriales,
   });
 
   /// Líneas del pedido que corresponden a equipos desinstalados (DESINTDO /
@@ -318,6 +322,10 @@ class Pedido {
       conformidad: j['conformidad'] is Map
           ? ConformidadCliente.fromJson(
               Map<String, dynamic>.from(j['conformidad'] as Map))
+          : null,
+      parteMateriales: j['parte_materiales'] is Map
+          ? ParteMaterialesResumen.fromJson(
+              Map<String, dynamic>.from(j['parte_materiales'] as Map))
           : null,
     );
   }

@@ -11,11 +11,17 @@ class AdicionalesRepository {
 
   String _s(dynamic v) => UiText.sanitizeDbValue(v?.toString());
 
-  Future<List<CatalogProduct>> getCatalogo(String q) async {
+  /// [categoria] es la categoría de PrestaShop: 632 adicionales (por
+  /// defecto) o 711 materiales del escandallo.
+  Future<List<CatalogProduct>> getCatalogo(String q, {int? categoria}) async {
     try {
       final json = await _api.getJson(
         AppConfig.getAdicionalesCatalogo,
-        query: {'q': q, 'limit': '0'},
+        query: {
+          'q': q,
+          'limit': '0',
+          if (categoria != null) 'categoria': '$categoria',
+        },
         noCache: true,
       );
       return _parseProductos(json);
@@ -24,11 +30,12 @@ class AdicionalesRepository {
     }
   }
 
-  /// Los 5 artículos más usados (para acceso rápido bajo el buscador).
-  Future<List<CatalogProduct>> getMasUsados() async {
+  /// Los artículos más usados (para acceso rápido bajo el buscador).
+  Future<List<CatalogProduct>> getMasUsados({int? categoria}) async {
     try {
       final json = await _api.getJson(
         AppConfig.getAdicionalesMasUsados,
+        query: {if (categoria != null) 'categoria': '$categoria'},
         noCache: true,
       );
       return _parseProductos(json);

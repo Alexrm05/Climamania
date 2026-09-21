@@ -21,17 +21,30 @@ require_once __DIR__ . "/get_adicionales_catalogo.php";
 $PS_PREFIX = isset($PS_DB_PREFIX) && $PS_DB_PREFIX !== "" ? $PS_DB_PREFIX : "ps_";
 $DEFAULT_IVA = "21.0000";
 
+// Categoría de PrestaShop: 632 = adicionales (por defecto, frecuencia en
+// líneas de presupuesto), 711 = materiales del escandallo (frecuencia en
+// líneas de partes de materiales).
+$categoriasPermitidas = [632, 711];
+$categoriaRaw = (int)trim((string)($_GET["categoria"] ?? "632"));
+$categoriaId = in_array($categoriaRaw, $categoriasPermitidas, true) ? $categoriaRaw : 632;
+
 try {
-    // 1) Los artículos más usados (por frecuencia en líneas de presupuesto).
+    // 1) Los artículos más usados, según el origen de la categoría.
     $pdo = getDBConnection();
-    $stmt = $pdo->query(
-        "SELECT Articulo, COUNT(*) AS n
-         FROM ClimaInstal_PresupuestosInstalador_Lineas
-         WHERE TRIM(COALESCE(Articulo, '')) <> ''
-         GROUP BY Articulo
-         ORDER BY n DESC, MAX(date_add) DESC
-         LIMIT 5"
-    );
+    $sqlMasUsados = $categoriaId === 711
+        ? "SELECT articulo AS Articulo, COUNT(*) AS n
+           FROM ClimaInstal_ParteMateriales_Relacionados
+           WHERE TRIM(COALESCE(articulo, '')) <> ''
+           GROUP BY articulo
+           ORDER BY n DESC, MAX(date_add) DESC
+           LIMIT 8"
+        : "SELECT Articulo, COUNT(*) AS n
+           FROM ClimaInstal_PresupuestosInstalador_Lineas
+           WHERE TRIM(COALESCE(Articulo, '')) <> ''
+           GROUP BY Articulo
+           ORDER BY n DESC, MAX(date_add) DESC
+           LIMIT 5";
+    $stmt = $pdo->query($sqlMasUsados);
     $codigos = [];
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
         $c = trim((string)($row["Articulo"] ?? ""));
@@ -49,7 +62,7 @@ try {
     $psPrefix = resolvePsPrefix($psPdo, $PS_PREFIX);
     $shopId = resolveDefaultShopId($psPdo, $psPrefix);
     $langId = resolveDefaultLangId($psPdo, $psPrefix, $shopId);
-    $categoryIds = [632];
+    $categoryIds = [$categoriaId];
 
     $idsOrdered = [];
     foreach ($codigos as $codigo) {
