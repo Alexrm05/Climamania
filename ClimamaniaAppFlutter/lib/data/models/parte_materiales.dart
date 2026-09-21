@@ -7,6 +7,10 @@ double _num(dynamic v) =>
 /// real. Mutable a propósito: la pantalla la edita en sitio.
 class MaterialLinea {
   final String articulo;
+
+  /// Tipo de instalación del que sale el material (INSTAL40, ...) o '*' si
+  /// es común a todos los pedidos. Vacío si lo añadió el técnico a mano.
+  final String articuloPadre;
   String descripcion;
   final String unidad; // m, ud, m/ud, -
   double cantidadPrevista;
@@ -18,6 +22,7 @@ class MaterialLinea {
 
   MaterialLinea({
     required this.articulo,
+    this.articuloPadre = '',
     required this.descripcion,
     this.unidad = 'ud',
     this.cantidadPrevista = 0,
@@ -36,6 +41,7 @@ class MaterialLinea {
     final unidad = UiText.sanitizeDbValue(j['unidad']?.toString());
     return MaterialLinea(
       articulo: UiText.sanitizeDbValue(j['articulo']?.toString()),
+      articuloPadre: UiText.sanitizeDbValue(j['articulo_padre']?.toString()),
       descripcion: UiText.sanitizeDbValue(j['descripcion']?.toString()),
       unidad: unidad.isEmpty ? 'ud' : unidad,
       cantidadPrevista: _num(j['cantidad_prevista']),
@@ -47,6 +53,7 @@ class MaterialLinea {
 
   Map<String, dynamic> toJson() => {
         'articulo': articulo,
+        'articulo_padre': articuloPadre,
         'descripcion': descripcion.trim(),
         'unidad': unidad,
         'cantidad_prevista': cantidadPrevista.toStringAsFixed(2),

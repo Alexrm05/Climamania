@@ -99,7 +99,14 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
         _msg(res.message.isEmpty ? 'Pedido no encontrado' : res.message);
         return;
       }
-      final parte = await matRepo.getParte(ref);
+      // Referencias del pedido: con ellas el servidor elige los materiales
+      // por defecto (por tipo de instalación) y la cantidad prevista.
+      final padres = [
+        for (final l in res.pedido!.detallePedido)
+          if (l.referencia.trim().isNotEmpty)
+            '${l.referencia.trim()}:${l.cantidad.trim().isEmpty ? '1' : l.cantidad.trim()}',
+      ];
+      final parte = await matRepo.getParte(ref, padres: padres);
       if (!mounted) return;
       setState(() {
         _pedido = res.pedido;
@@ -566,14 +573,16 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
                 child: Text(l.articulo.isEmpty ? 'SIN REF.' : l.articulo,
                     style: t.titleSmall?.copyWith(color: AppColors.primary)),
               ),
-              if (l.porDefecto)
+              if (l.articuloPadre.isNotEmpty)
                 Container(
                   margin: const EdgeInsets.only(right: 4),
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                       color: AppColors.infoTint, borderRadius: AppRadius.brSm),
-                  child: const Text('habitual',
-                      style: TextStyle(fontSize: 11, color: AppColors.infoFg)),
+                  child: Text(
+                      l.articuloPadre == '*' ? 'común' : l.articuloPadre,
+                      style: const TextStyle(
+                          fontSize: 11, color: AppColors.infoFg)),
                 ),
               IconButton(
                 visualDensity: VisualDensity.compact,

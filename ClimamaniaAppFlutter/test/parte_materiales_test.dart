@@ -31,7 +31,8 @@ void main() {
       'meta': {'usuario': 'joseluis', 'equipo': 'CLM1',
         'fecha_creacion': '2026-09-21 09:00:00', 'fecha_edicion': '2026-09-21 11:05:00'},
       'lineas': [
-        {'articulo': 'TUBFRIG14', 'descripcion': 'Tubería 1/4"', 'unidad': 'm',
+        {'articulo': 'TUBFRIG14', 'articulo_padre': 'INSTAL40',
+          'descripcion': 'Tubería 1/4"', 'unidad': 'm',
           'cantidad_prevista': '3.00', 'cantidad': '4.00',
           'precio_unitario_sin_iva': '2.500000'},
       ],
@@ -45,6 +46,7 @@ void main() {
     expect(p.existe, isTrue);
     expect(p.equipo, 'CLM1');
     final l = p.lineas.single;
+    expect(l.articuloPadre, 'INSTAL40');
     expect(l.cantidad, 4);
     expect(l.cantidadPrevista, 3);
     expect(l.desviacion, 1);
@@ -60,10 +62,11 @@ void main() {
 
   test('MaterialLinea.toJson formatea cantidades y precio', () {
     final l = MaterialLinea(
-        articulo: 'X', descripcion: ' Desc ', unidad: 'ud',
-        cantidadPrevista: 1, cantidad: 2, precioUnitarioSinIva: 1.5);
+        articulo: 'X', articuloPadre: 'INSTAL40', descripcion: ' Desc ',
+        unidad: 'ud', cantidadPrevista: 1, cantidad: 2, precioUnitarioSinIva: 1.5);
     expect(l.toJson(), {
       'articulo': 'X',
+      'articulo_padre': 'INSTAL40',
       'descripcion': 'Desc',
       'unidad': 'ud',
       'cantidad_prevista': '1.00',

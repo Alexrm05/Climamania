@@ -16,12 +16,18 @@ class MaterialesRepository {
   String _s(dynamic v) => UiText.sanitizeDbValue(v?.toString());
 
   /// Parte del pedido (líneas guardadas, horas y materiales por defecto).
-  /// Devuelve null si el servidor no responde o falla.
-  Future<ParteMateriales?> getParte(String referencia) async {
+  /// [padres] son las referencias del pedido con su cantidad ("INSTAL40:2"):
+  /// el servidor cruza con ellas los materiales por defecto. Si no se pasan,
+  /// las lee él de PrestaShop. Devuelve null si el servidor falla.
+  Future<ParteMateriales?> getParte(String referencia,
+      {List<String> padres = const []}) async {
     try {
       final json = await _api.getJson(
         AppConfig.getParteMateriales,
-        query: {'referencia': referencia},
+        query: {
+          'referencia': referencia,
+          if (padres.isNotEmpty) 'padres': padres.join(','),
+        },
         noCache: true,
       );
       if (json['success'] != true) return null;

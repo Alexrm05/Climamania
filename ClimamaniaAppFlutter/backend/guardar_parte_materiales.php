@@ -10,8 +10,8 @@
 //
 // POST: referencia, usuario, equipo, hora_inicio (HH:MM), hora_final (HH:MM),
 //       latitud, longitud (opcionales),
-//       lineas = JSON [{articulo, descripcion, unidad, cantidad_prevista,
-//                       cantidad, precio_unitario_sin_iva}]
+//       lineas = JSON [{articulo, articulo_padre, descripcion, unidad,
+//                       cantidad_prevista, cantidad, precio_unitario_sin_iva}]
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -84,8 +84,10 @@ foreach ($lineasIn as $item) {
     if ($cantidad <= 0 && $prevista <= 0) {
         continue;
     }
+    $padre = presup_normalize_text((string)($item["articulo_padre"] ?? ""), 64);
     $lineas[] = [
         "articulo" => $articulo,
+        "padre" => $padre !== "" ? $padre : null,
         "descripcion" => presup_normalize_text((string)($item["descripcion"] ?? ""), 255),
         "unidad" => presup_normalize_text((string)($item["unidad"] ?? "ud"), 10) ?: "ud",
         "prevista" => round(max(0.0, $prevista), 2),
@@ -112,11 +114,11 @@ try {
 
     $ins = $pdo->prepare(
         "INSERT INTO ClimaInstal_ParteMateriales
-            (pedido, articulo, descripcion, unidad, cantidad_prevista, cantidad,
+            (pedido, articulo, articulo_padre, descripcion, unidad, cantidad_prevista, cantidad,
              hora_inicio, hora_final, precio_unitario_sin_iva,
              usuario, equipo_instaladores, fecha_creacion, fecha_edicion)
          VALUES
-            (:pedido, :articulo, :descripcion, :unidad, :prevista, :cantidad,
+            (:pedido, :articulo, :padre, :descripcion, :unidad, :prevista, :cantidad,
              :hora_inicio, :hora_final, :precio,
              :usuario, :equipo, " . ($existia ? ":fecha_creacion" : "NOW()") . ", NOW())"
     );
@@ -124,6 +126,7 @@ try {
         $params = [
             ":pedido" => $pedido,
             ":articulo" => $l["articulo"],
+            ":padre" => $l["padre"],
             ":descripcion" => $l["descripcion"],
             ":unidad" => $l["unidad"],
             ":prevista" => number_format($l["prevista"], 2, ".", ""),
