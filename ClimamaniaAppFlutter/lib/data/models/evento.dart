@@ -23,6 +23,22 @@ class Evento {
   final DateTime? startDate;
   final DateTime? endDate;
 
+  /// Cualquier texto que empiece por "vac" (VACACIONES, y las variantes con
+  /// errata que hay en la agenda: "vaciones", "vacaiones").
+  static final _vacaciones = RegExp(r'\bvac', caseSensitive: false);
+
+  /// El evento es una instalación real: su referencia es un número de pedido
+  /// (no "00000" ni un texto como "reserva", "visita" o "JO-VACACIONES") y
+  /// no está marcado como vacaciones en la referencia, el título o el
+  /// nombre. La agenda no tiene campo de tipo; las vacaciones se anotan a
+  /// mano y este es el criterio que las separa de forma fiable.
+  bool get esInstalacion {
+    final ref = referencia.trim();
+    if (!RegExp(r'^\d+$').hasMatch(ref)) return false;
+    if (RegExp(r'^0+$').hasMatch(ref)) return false;
+    return !_vacaciones.hasMatch('$referencia $titulo $nombreCliente');
+  }
+
   Evento({
     required this.start,
     required this.end,

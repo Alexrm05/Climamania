@@ -128,7 +128,12 @@ class HomeController extends ChangeNotifier {
         _safeNotify();
         return;
       }
-      if (resp.eventos.isEmpty) {
+      // El resumen es de instalaciones: fuera vacaciones, reservas, visitas
+      // y demás anotaciones de agenda sin número de pedido.
+      final instalaciones =
+          resp.eventos.where((e) => e.esInstalacion).toList();
+
+      if (instalaciones.isEmpty) {
         enCurso = const [CardState.text('Instalación en curso: ninguna')];
         proxima = const CardState.text('Próxima instalación: ninguna');
         _safeNotify();
@@ -141,7 +146,7 @@ class HomeController extends ChangeNotifier {
       final enCursoEventos = <Evento>[];
       Evento? bestProxima;
 
-      for (final e in resp.eventos) {
+      for (final e in instalaciones) {
         final start = e.startDate;
         if (start == null) continue;
         final end = e.endDate ?? start.add(const Duration(hours: 1));
