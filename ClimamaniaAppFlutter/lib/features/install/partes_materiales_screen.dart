@@ -15,8 +15,13 @@ import '../../theme/app_spacing.dart';
 /// consumido acumulado por artículo. Cada usuario ve solo lo suyo (el
 /// servidor filtra por usuario salvo rol administrador). Desde aquí se abre
 /// cualquier parte para verlo o editarlo, y se puede crear uno nuevo.
+///
+/// [embebida] = true cuando vive en la pestaña "Escandallo" del shell: sin
+/// barra propia (la pone el shell) y con el alta como botón flotante.
 class PartesMaterialesScreen extends StatefulWidget {
-  const PartesMaterialesScreen({super.key});
+  final bool embebida;
+
+  const PartesMaterialesScreen({super.key, this.embebida = false});
 
   @override
   State<PartesMaterialesScreen> createState() => _PartesMaterialesScreenState();
@@ -26,6 +31,7 @@ class _PartesMaterialesScreenState extends State<PartesMaterialesScreen> {
   static final _iso = DateFormat('yyyy-MM-dd');
   static final _corta = DateFormat('dd/MM/yyyy');
 
+  final _buscarCtrl = TextEditingController();
   late DateTime _desde;
   late DateTime _hasta;
   PartesMateriales? _datos;
@@ -39,6 +45,20 @@ class _PartesMaterialesScreenState extends State<PartesMaterialesScreen> {
     _desde = DateTime(hoy.year, hoy.month, 1);
     _hasta = DateTime(hoy.year, hoy.month, hoy.day);
     _cargar();
+  }
+
+  @override
+  void dispose() {
+    _buscarCtrl.dispose();
+    super.dispose();
+  }
+
+  /// Abre el parte del pedido escrito (existente para ver/editar, o nuevo).
+  Future<void> _buscarPedido() async {
+    FocusScope.of(context).unfocus();
+    final ref = _buscarCtrl.text.trim();
+    if (ref.isEmpty) return;
+    await _abrirParte(ref);
   }
 
   Future<void> _cargar() async {
@@ -97,21 +117,40 @@ class _PartesMaterialesScreenState extends State<PartesMaterialesScreen> {
     final d = _datos;
     return Scaffold(
       backgroundColor: AppColors.primaryLight,
-      appBar: AppBar(
-        title: const Text('Partes de trabajo'),
-        actions: [
-          IconButton(
-            tooltip: 'Nuevo parte',
-            icon: const Icon(Icons.add),
-            onPressed: _nuevoParte,
-          ),
-        ],
-      ),
+      appBar: widget.embebida
+          ? null
+          : AppBar(
+              title: const Text('Partes de trabajo'),
+              actions: [
+                IconButton(
+                  tooltip: 'Nuevo parte',
+                  icon: const Icon(Icons.add),
+                  onPressed: _nuevoParte,
+                ),
+              ],
+            ),
+      floatingActionButton: widget.embebida
+          ? FloatingActionButton.extended(
+              onPressed: _nuevoParte,
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+              icon: const Icon(Icons.add),
+              label: const Text('Nuevo parte'),
+            )
+          : null,
       body: RefreshIndicator(
         onRefresh: _cargar,
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg,
+              AppSpacing.lg, widget.embebida ? 88 : AppSpacing.lg),
           children: [
+            if (widget.embebida)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: Text('Escandallo · Partes de trabajo',
+                    style: t.titleLarge),
+              ),
+            _cardBuscar(t),
             _cardFiltro(t),
             if (_cargando)
               const Padding(
@@ -126,6 +165,43 @@ class _PartesMaterialesScreenState extends State<PartesMaterialesScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _cardBuscar(TextTheme t) {
+    return _card(
+      'Buscar parte',
+      Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: AppDecorations.editText,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: TextField(
+                controller: _buscarCtrl,
+                keyboardType: TextInputType.number,
+                onSubmitted: (_) => _buscarPedido(),
+                decoration: AppDecorations.bareInput(
+                    hintText: 'Nº de pedido',
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10)),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          SizedBox(
+            height: 46,
+            child: ElevatedButton.icon(
+              onPressed: _buscarPedido,
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.white,
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.brMd)),
+              icon: const Icon(Icons.search, size: 20),
+              label: const Text('Abrir'),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -129,12 +129,6 @@ GoRouter createRouter(SessionService session) {
           );
         },
       ),
-      // Escandallo: histórico de partes y totales por artículo (menú lateral).
-      GoRoute(
-        path: '/partes-materiales',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const PartesMaterialesScreen(),
-      ),
       // Escandallo: parte de trabajo de un pedido (material y horas).
       GoRoute(
         path: '/escandallo',
@@ -300,7 +294,8 @@ GoRouter createRouter(SessionService session) {
             AppShell(navigationShell: navigationShell),
         branches: [
           // Orden EXACTO de la barra inferior: Calendario · Adicionales ·
-          // Inicio · Valoraciones · Web.
+          // Inicio · Valoraciones · Escandallo. La rama 5 (Web) no tiene
+          // pestaña: solo se llega desde el menú lateral.
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -330,6 +325,15 @@ GoRouter createRouter(SessionService session) {
               GoRoute(
                 path: '/ratings',
                 builder: (context, state) => const ValoracionesScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/partes',
+                builder: (context, state) =>
+                    const PartesMaterialesScreen(embebida: true),
               ),
             ],
           ),

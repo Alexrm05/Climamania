@@ -81,16 +81,14 @@ class AppDrawer extends StatelessWidget {
             ),
             _DrawerItem(
               icon: Icons.inventory_2_outlined,
-              label: 'Partes de trabajo',
-              onTap: () {
-                Navigator.of(context).pop();
-                context.push('/partes-materiales');
-              },
+              label: 'Escandallo',
+              onTap: () => _goBranch(context, 4),
             ),
+            // Web solo vive aquí: es la rama 5 del shell, sin pestaña.
             _DrawerItem(
                 icon: Icons.language,
                 label: 'Web ClimaMania',
-                onTap: () => _goBranch(context, 4)),
+                onTap: () => _goBranch(context, 5)),
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
               child: Divider(height: 1, color: AppColors.border),

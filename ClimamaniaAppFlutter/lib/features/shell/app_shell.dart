@@ -40,8 +40,8 @@ class AppShell extends StatelessWidget {
         body: SafeArea(
           child: Column(
             children: [
-              // Las 5 pestañas principales (Calendario, Adicionales, Inicio,
-              // Valoraciones, Web) son de nivel superior: siempre el menú, sin
+              // Las ramas del shell (Calendario, Adicionales, Inicio,
+              // Valoraciones, Escandallo y Web) son de nivel superior: siempre el menú, sin
               // flecha de "volver". (El gesto atrás del sistema sí vuelve a la
               // pestaña anterior vía PopScope.)
               const AppTopBar(canGoBack: false),

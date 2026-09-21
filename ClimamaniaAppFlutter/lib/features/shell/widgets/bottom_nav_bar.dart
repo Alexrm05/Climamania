@@ -15,7 +15,10 @@ class _NavItem {
 }
 
 /// Barra inferior de 5 pestañas:
-/// Calendario · Adicionales · Inicio · Valoraciones · Web.
+/// Calendario · Adicionales · Inicio · Valoraciones · Escandallo.
+/// La rama Web sigue existiendo en el shell (índice 5) pero no tiene pestaña:
+/// se abre desde el menú lateral y, mientras está activa, ninguna pestaña se
+/// marca.
 class BottomNavBar extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -26,7 +29,7 @@ class BottomNavBar extends StatelessWidget {
     _NavItem('Adicionales', icon: Icons.add_box_outlined),
     _NavItem('Inicio', asset: 'assets/images/ic_home.png'),
     _NavItem('Valoraciones', icon: Icons.star_border),
-    _NavItem('Web', asset: 'assets/images/ic_web.png'),
+    _NavItem('Escandallo', icon: Icons.inventory_2_outlined),
   ];
 
   void _onTap(BuildContext context, int index) {
