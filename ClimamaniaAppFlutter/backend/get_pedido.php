@@ -7,6 +7,7 @@ error_reporting(E_ALL);
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . "/conexion.php";
+require_once __DIR__ . "/ps_connection_common.php";
 
 $API_KEY = "TEST123";
 
@@ -26,8 +27,13 @@ if ($referencia === '') {
 
 try {
     $pdo = getDBConnection();
-    $psPdo = getPSConnection();
-    $psPrefix = resolvePsPrefix($psPdo, $PS_PREFIX);
+    // PrestaShop puede no responder (BD de la tienda caída o inaccesible). En
+    // ese caso la ficha se sirve igualmente con los datos de ClimaInstal
+    // (cliente, dirección, detalles, fotos, comentarios); solo faltan
+    // facturación, entrega y el detalle de líneas del pedido.
+    $psPdo = clm_try_ps_connection(4);
+    $psDisponible = $psPdo !== null;
+    $psPrefix = $psDisponible ? resolvePsPrefix($psPdo, $PS_PREFIX) : $PS_PREFIX;
 
     $pedido = [
         "referencia" => $referencia,
@@ -45,6 +51,7 @@ try {
         "detalle_pedido" => [],
         "observaciones_pedido" => null,
         "comentarios_instalador" => [],
+        "prestashop_disponible" => true,
         "fotografias" => [
             "cliente" => [],
             "previas" => [],
@@ -115,6 +122,10 @@ try {
     $pedido["finalizaciones"] = $stmt->fetchAll();
 
     // Datos de facturacion y entrega (Prestashop)
+    $ps = false;
+    if (!$psDisponible) {
+        $pedido["prestashop_disponible"] = false;
+    } else {
     $stmt = $psPdo->prepare(
         "SELECT ped.id_order,
                 c.email AS EmailCliente,
@@ -138,6 +149,7 @@ try {
     );
     $stmt->execute([":ref" => $referencia]);
     $ps = $stmt->fetch();
+    }
 
     $orderId = null;
     if ($ps) {
@@ -288,10 +300,11 @@ try {
         exit;
     }
 
-    echo json_encode([
-        "success" => true,
-        "pedido" => $pedido
-    ], JSON_UNESCAPED_UNICODE);
+    $out = ["success" => true, "pedido" => $pedido];
+    if (!$psDisponible) {
+        $out["message"] = "PrestaShop no disponible: faltan facturación, entrega y detalle del pedido";
+    }
+    echo json_encode($out, JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
