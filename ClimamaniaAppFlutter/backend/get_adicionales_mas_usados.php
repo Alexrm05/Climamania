@@ -33,10 +33,10 @@ try {
     $pdo = getDBConnection();
     $sqlMasUsados = $categoriaId === 711
         ? "SELECT articulo AS Articulo, COUNT(*) AS n
-           FROM ClimaInstal_ParteMateriales_Relacionados
-           WHERE TRIM(COALESCE(articulo, '')) <> ''
+           FROM ClimaInstal_ParteMateriales
+           WHERE TRIM(COALESCE(articulo, '')) <> '' AND cantidad > 0
            GROUP BY articulo
-           ORDER BY n DESC, MAX(date_add) DESC
+           ORDER BY n DESC, MAX(fecha_edicion) DESC
            LIMIT 8"
         : "SELECT Articulo, COUNT(*) AS n
            FROM ClimaInstal_PresupuestosInstalador_Lineas
