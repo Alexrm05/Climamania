@@ -1,4 +1,4 @@
-package com.climamania.climamania_app
+package com.climamania.clminstal
 
 import io.flutter.embedding.android.FlutterActivity
 
