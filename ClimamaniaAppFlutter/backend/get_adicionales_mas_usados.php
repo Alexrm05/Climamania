@@ -21,24 +21,16 @@ require_once __DIR__ . "/get_adicionales_catalogo.php";
 $PS_PREFIX = isset($PS_DB_PREFIX) && $PS_DB_PREFIX !== "" ? $PS_DB_PREFIX : "ps_";
 $DEFAULT_IVA = "21.0000";
 
-// Categoría de PrestaShop: 632 = adicionales (por defecto, frecuencia en
-// líneas de presupuesto), 711 = materiales del escandallo (frecuencia en
-// líneas de partes de materiales).
-$categoriasPermitidas = [632, 711];
-$categoriaRaw = (int)trim((string)($_GET["categoria"] ?? "632"));
-$categoriaId = in_array($categoriaRaw, $categoriasPermitidas, true) ? $categoriaRaw : 632;
+// Categoría de PrestaShop: 632 = adicionales del presupuesto. Los
+// materiales del escandallo ya no salen de aquí: tienen su propio buscador
+// (get_materiales_catalogo.php) sobre la tabla de consumibles sincronizada.
+$categoriaId = 632;
 
 try {
     // 1) Los artículos más usados, según el origen de la categoría.
     $pdo = getDBConnection();
-    $sqlMasUsados = $categoriaId === 711
-        ? "SELECT articulo AS Articulo, COUNT(*) AS n
-           FROM ClimaInstal_ParteMateriales
-           WHERE TRIM(COALESCE(articulo, '')) <> '' AND cantidad > 0
-           GROUP BY articulo
-           ORDER BY n DESC, MAX(fecha_edicion) DESC
-           LIMIT 8"
-        : "SELECT Articulo, COUNT(*) AS n
+    $sqlMasUsados =
+        "SELECT Articulo, COUNT(*) AS n
            FROM ClimaInstal_PresupuestosInstalador_Lineas
            WHERE TRIM(COALESCE(Articulo, '')) <> ''
            GROUP BY Articulo

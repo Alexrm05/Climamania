@@ -64,9 +64,10 @@ class AppConfig {
       'get_adicionales_mas_usados.php';
   static const String getPresupuestos = 'get_presupuestos_instalador.php';
 
-  // Escandallo: parte de materiales gastados por instalación.
-  // El catálogo reutiliza get_adicionales_catalogo.php con categoria=711.
-  static const int categoriaMateriales = 711;
+  // Escandallo: parte de materiales gastados por instalación. El catálogo
+  // de materiales sale de ClimaSinc_ClimaInstal_Consumibles (sincronizada
+  // desde PrestaShop), no de la tienda.
+  static const String getMaterialesCatalogo = 'get_materiales_catalogo.php';
   static const String getParteMateriales = 'get_parte_materiales.php';
   static const String guardarParteMateriales = 'guardar_parte_materiales.php';
   static const String getPartesMateriales = 'get_partes_materiales.php';

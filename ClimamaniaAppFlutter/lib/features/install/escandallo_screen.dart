@@ -5,12 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/app_config.dart';
 import '../../core/ui_text.dart';
-import '../../data/models/catalogo.dart';
 import '../../data/models/parte_materiales.dart';
 import '../../data/models/pedido.dart';
-import '../../data/repositories/adicionales_repository.dart';
 import '../../data/repositories/materiales_repository.dart';
 import '../../data/repositories/pedido_repository.dart';
 import '../../services/location_service.dart';
@@ -168,18 +165,14 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
   // Líneas
   // ---------------------------------------------------------------------------
 
-  void _anadirProducto(CatalogProduct p) {
-    final existente = _lineas.where((l) => l.articulo == p.codigo).firstOrNull;
+  void _anadirMaterial(MaterialCatalogo m) {
+    final existente =
+        _lineas.where((l) => l.articulo == m.articulo).firstOrNull;
     setState(() {
       if (existente != null) {
         existente.cantidad += 1;
       } else {
-        _lineas.add(MaterialLinea(
-          articulo: p.codigo,
-          descripcion: p.descripcion,
-          cantidad: 1,
-          precioUnitarioSinIva: p.precioBaseSinIva,
-        ));
+        _lineas.add(m.comoLinea());
       }
     });
   }
@@ -192,7 +185,7 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
   }
 
   Future<void> _abrirBuscador() async {
-    final producto = await showModalBottomSheet<CatalogProduct>(
+    final material = await showModalBottomSheet<MaterialCatalogo>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.primaryLight,
@@ -200,7 +193,7 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => const _BuscadorMateriales(),
     );
-    if (producto != null) _anadirProducto(producto);
+    if (material != null) _anadirMaterial(material);
   }
 
   // ---------------------------------------------------------------------------
@@ -570,7 +563,9 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
           Row(
             children: [
               Expanded(
-                child: Text(l.articulo.isEmpty ? 'SIN REF.' : l.articulo,
+                child: Text(l.referenciaVisible.isEmpty
+                    ? 'SIN REF.'
+                    : l.referenciaVisible,
                     style: t.titleSmall?.copyWith(color: AppColors.primary)),
               ),
               if (l.articuloPadre.isNotEmpty)
@@ -727,8 +722,8 @@ class _BuscadorMateriales extends StatefulWidget {
 class _BuscadorMaterialesState extends State<_BuscadorMateriales> {
   final _ctrl = TextEditingController();
   Timer? _debounce;
-  List<CatalogProduct> _masUsados = [];
-  List<CatalogProduct> _resultados = [];
+  List<MaterialCatalogo> _masUsados = [];
+  List<MaterialCatalogo> _resultados = [];
   bool _buscando = false;
 
   @override
@@ -745,9 +740,7 @@ class _BuscadorMaterialesState extends State<_BuscadorMateriales> {
   }
 
   Future<void> _cargarMasUsados() async {
-    final r = await context
-        .read<AdicionalesRepository>()
-        .getMasUsados(categoria: AppConfig.categoriaMateriales);
+    final r = await context.read<MaterialesRepository>().buscarMateriales('');
     if (mounted) setState(() => _masUsados = r);
   }
 
@@ -762,9 +755,8 @@ class _BuscadorMaterialesState extends State<_BuscadorMateriales> {
       return;
     }
     setState(() => _buscando = true);
-    final r = await context
-        .read<AdicionalesRepository>()
-        .getCatalogo(q.trim(), categoria: AppConfig.categoriaMateriales);
+    final r =
+        await context.read<MaterialesRepository>().buscarMateriales(q.trim());
     if (mounted) {
       setState(() {
         _resultados = r;
@@ -844,12 +836,12 @@ class _BuscadorMaterialesState extends State<_BuscadorMateriales> {
     );
   }
 
-  Widget _item(CatalogProduct p) {
+  Widget _item(MaterialCatalogo m) {
     final t = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: InkWell(
-        onTap: () => Navigator.of(context).pop(p),
+        onTap: () => Navigator.of(context).pop(m),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
@@ -863,9 +855,9 @@ class _BuscadorMaterialesState extends State<_BuscadorMateriales> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(p.codigo.isEmpty ? 'SIN REF.' : p.codigo,
+                    Text(m.codigo.isEmpty ? 'SIN REF.' : m.codigo,
                         style: t.titleSmall?.copyWith(color: AppColors.primary)),
-                    Text(p.descripcion, style: t.bodyMedium),
+                    Text(m.descripcion, style: t.bodyMedium),
                   ],
                 ),
               ),

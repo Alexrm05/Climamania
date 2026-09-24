@@ -16,6 +16,7 @@ error_reporting(E_ALL);
 header('Content-Type: application/json; charset=utf-8');
 
 require_once "conexion.php";
+require_once __DIR__ . "/consumibles_common.php";
 
 $API_KEY = "TEST123";
 
@@ -113,11 +114,21 @@ try {
     );
     $stmt->execute($params);
 
+    $filasTotales = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // El artículo guardado es el IdGotel: se resuelve contra el catálogo
+    // para mostrar el código de material que el técnico reconoce.
+    $catalogo = clm_consumibles_por_claves($pdo, array_map(
+        fn($r) => (string)$r["articulo"],
+        $filasTotales
+    ));
+
     $totales = [];
-    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+    foreach ($filasTotales as $r) {
         $prev = (float)$r["prevista"];
         $real = (float)$r["real_total"];
+        $mat = $catalogo[strtoupper(trim((string)$r["articulo"]))] ?? null;
         $totales[] = [
+            "codigo" => $mat !== null ? $mat["codigo"] : (string)$r["articulo"],
             "articulo" => (string)$r["articulo"],
             "descripcion" => (string)($r["descripcion"] ?? ""),
             "unidad" => (string)($r["unidad"] ?? "ud"),

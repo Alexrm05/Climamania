@@ -6,6 +6,9 @@
 //   horas    -> hora_inicio / hora_final (HH:MM)
 //   meta     -> usuario, equipo, fecha_creacion, fecha_edicion
 //   lineas   -> filas guardadas (ref, descripción, unidad, prevista, real, precio)
+//               "articulo" es el IdGotel del material y "codigo" su
+//               referencia legible, resuelta contra el catálogo de
+//               consumibles (ClimaSinc_ClimaInstal_Consumibles).
 //   defecto  -> materiales por defecto para precargar la tabla cuando aún no
 //               hay parte: los de ClimaInstal_ParteMateriales_Relacionados
 //               cuyo articulo_padre es una de las referencias del pedido (o
@@ -23,6 +26,7 @@ error_reporting(E_ALL);
 header('Content-Type: application/json; charset=utf-8');
 
 require_once "conexion.php";
+require_once __DIR__ . "/consumibles_common.php";
 
 $API_KEY = "TEST123";
 
@@ -181,6 +185,24 @@ try {
         if ($e->getCode() !== "42S02") {
             throw $e;
         }
+    }
+
+    // Catálogo de consumibles: pasa las referencias a IdGotel (lo que se
+    // guarda) y añade el código legible. Los materiales por defecto se
+    // cargaron con el código de PrestaShop, así que se resuelven aquí.
+    $claves = [];
+    foreach ($lineas as $l) {
+        $claves[] = $l["articulo"];
+    }
+    foreach ($defecto as $d) {
+        $claves[] = $d["articulo"];
+    }
+    $catalogo = clm_consumibles_por_claves($pdo, $claves);
+    foreach ($lineas as $i => $l) {
+        $lineas[$i] = clm_consumible_completa($l, $catalogo);
+    }
+    foreach ($defecto as $i => $d) {
+        $defecto[$i] = clm_consumible_completa($d, $catalogo);
     }
 
     echo json_encode([

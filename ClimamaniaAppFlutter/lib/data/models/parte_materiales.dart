@@ -6,7 +6,12 @@ double _num(dynamic v) =>
 /// Línea del parte de trabajo: un material con su previsión y su consumo
 /// real. Mutable a propósito: la pantalla la edita en sitio.
 class MaterialLinea {
+  /// IdGotel del material: es lo que se guarda en la base de datos. El Id de
+  /// la tabla de consumibles no vale, cambia al resincronizar con PrestaShop.
   final String articulo;
+
+  /// Referencia legible del material (CINST…), solo para mostrar.
+  final String codigo;
 
   /// Tipo de instalación del que sale el material (INSTAL40, ...) o '*' si
   /// es común a todos los pedidos. Vacío si lo añadió el técnico a mano.
@@ -22,6 +27,7 @@ class MaterialLinea {
 
   MaterialLinea({
     required this.articulo,
+    this.codigo = '',
     this.articuloPadre = '',
     required this.descripcion,
     this.unidad = 'ud',
@@ -33,6 +39,10 @@ class MaterialLinea {
 
   double get desviacion => cantidad - cantidadPrevista;
 
+  /// Lo que se enseña al técnico: el código si el material está en el
+  /// catálogo, y si no el identificador guardado.
+  String get referenciaVisible => codigo.isNotEmpty ? codigo : articulo;
+
   /// Tiene algo que guardar: consumo real o previsión.
   bool get relevante => cantidad > 0 || cantidadPrevista > 0;
 
@@ -41,6 +51,7 @@ class MaterialLinea {
     final unidad = UiText.sanitizeDbValue(j['unidad']?.toString());
     return MaterialLinea(
       articulo: UiText.sanitizeDbValue(j['articulo']?.toString()),
+      codigo: UiText.sanitizeDbValue(j['codigo']?.toString()),
       articuloPadre: UiText.sanitizeDbValue(j['articulo_padre']?.toString()),
       descripcion: UiText.sanitizeDbValue(j['descripcion']?.toString()),
       unidad: unidad.isEmpty ? 'ud' : unidad,
@@ -60,6 +71,46 @@ class MaterialLinea {
         'cantidad': cantidad.toStringAsFixed(2),
         'precio_unitario_sin_iva': precioUnitarioSinIva.toStringAsFixed(6),
       };
+}
+
+/// Material del catálogo del escandallo (ClimaSinc_ClimaInstal_Consumibles).
+/// [articulo] es el IdGotel: lo que se guarda en el parte.
+class MaterialCatalogo {
+  final String articulo;
+  final String codigo;
+  final String descripcion;
+  final String unidad;
+  final double precioUnitarioSinIva;
+
+  const MaterialCatalogo({
+    required this.articulo,
+    required this.codigo,
+    required this.descripcion,
+    required this.unidad,
+    this.precioUnitarioSinIva = 0,
+  });
+
+  factory MaterialCatalogo.fromJson(Map<String, dynamic> j) {
+    String s(String k) => UiText.sanitizeDbValue(j[k]?.toString());
+    final unidad = s('unidad');
+    return MaterialCatalogo(
+      articulo: s('articulo'),
+      codigo: s('codigo'),
+      descripcion: s('descripcion'),
+      unidad: unidad.isEmpty ? 'ud' : unidad,
+      precioUnitarioSinIva: _num(j['precio_unitario_sin_iva']),
+    );
+  }
+
+  /// Línea nueva del parte a partir del material elegido.
+  MaterialLinea comoLinea() => MaterialLinea(
+        articulo: articulo,
+        codigo: codigo,
+        descripcion: descripcion,
+        unidad: unidad,
+        cantidad: 1,
+        precioUnitarioSinIva: precioUnitarioSinIva,
+      );
 }
 
 /// Parte de un pedido tal como lo devuelve get_parte_materiales.php.
@@ -195,6 +246,9 @@ class ParteResumen {
 /// Total por artículo entre dos fechas.
 class MaterialTotal {
   final String articulo;
+
+  /// Referencia legible (el artículo guardado es el IdGotel).
+  final String codigo;
   final String descripcion;
   final String unidad;
   final double cantidadPrevista;
@@ -204,6 +258,7 @@ class MaterialTotal {
 
   const MaterialTotal({
     required this.articulo,
+    this.codigo = '',
     required this.descripcion,
     required this.unidad,
     required this.cantidadPrevista,
@@ -214,10 +269,13 @@ class MaterialTotal {
 
   double get desviacion => cantidad - cantidadPrevista;
 
+  String get referenciaVisible => codigo.isNotEmpty ? codigo : articulo;
+
   factory MaterialTotal.fromJson(Map<String, dynamic> j) {
     String s(String k) => UiText.sanitizeDbValue(j[k]?.toString());
     return MaterialTotal(
       articulo: s('articulo'),
+      codigo: s('codigo'),
       descripcion: s('descripcion'),
       unidad: s('unidad').isEmpty ? 'ud' : s('unidad'),
       cantidadPrevista: _num(j['cantidad_prevista']),

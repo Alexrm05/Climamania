@@ -6,14 +6,35 @@ import '../api/api_client.dart';
 import '../models/parte_materiales.dart';
 
 /// Escandallo: partes de trabajo con el material consumido en cada
-/// instalación. El catálogo de artículos (categoría 711) se consulta con
-/// [AdicionalesRepository.getCatalogo] pasando [AppConfig.categoriaMateriales].
+/// instalación, y catálogo de materiales
+/// (ClimaSinc_ClimaInstal_Consumibles, sincronizada desde PrestaShop).
 class MaterialesRepository {
   final ApiClient _api;
 
   MaterialesRepository(this._api);
 
   String _s(dynamic v) => UiText.sanitizeDbValue(v?.toString());
+
+  /// Busca materiales por referencia o descripción. Con [q] vacío devuelve
+  /// los más usados. Lista vacía si el servidor falla.
+  Future<List<MaterialCatalogo>> buscarMateriales(String q) async {
+    try {
+      final json = await _api.getJson(
+        AppConfig.getMaterialesCatalogo,
+        query: {'q': q, if (q.isEmpty) 'mas_usados': '1'},
+        noCache: true,
+      );
+      if (json['success'] != true) return const [];
+      final raw = json['materiales'];
+      if (raw is! List) return const [];
+      return [
+        for (final e in raw)
+          if (e is Map) MaterialCatalogo.fromJson(Map<String, dynamic>.from(e)),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
 
   /// Parte del pedido (líneas guardadas, horas y materiales por defecto).
   /// [padres] son las referencias del pedido con su cantidad ("INSTAL40:2"):
