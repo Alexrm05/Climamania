@@ -35,6 +35,8 @@ class EscandalloScreen extends StatefulWidget {
 }
 
 class _EscandalloScreenState extends State<EscandalloScreen> {
+  static final _diaCorto = DateFormat('dd/MM');
+
   final _pedidoCtrl = TextEditingController();
   final _descCtrls = <MaterialLinea, TextEditingController>{};
 
@@ -43,8 +45,8 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
   bool _cargando = false;
   bool _guardando = false;
 
-  String _horaInicio = '';
-  String _horaFinal = '';
+  /// Días trabajados: una instalación puede ocupar varias jornadas.
+  final List<Jornada> _jornadas = [];
   final List<MaterialLinea> _lineas = [];
 
   @override
@@ -113,11 +115,14 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
           c.dispose();
         }
         _descCtrls.clear();
+        _jornadas.clear();
         if (parte != null) {
-          _horaInicio = parte.horaInicio;
-          _horaFinal = parte.horaFinal;
+          _jornadas.addAll(parte.jornadas);
           // Con parte guardado se edita ese; si no, arrancan los de defecto.
           _lineas.addAll(parte.existe ? parte.lineas : parte.defecto);
+        }
+        if (_jornadas.isEmpty) {
+          _jornadas.add(Jornada(fecha: DateTime.now()));
         }
       });
     } finally {
@@ -138,8 +143,8 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
   String _fmt(TimeOfDay t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
-  Future<void> _elegirHora(bool llegada) async {
-    final actual = _parse(llegada ? _horaInicio : _horaFinal) ?? TimeOfDay.now();
+  Future<void> _elegirHora(Jornada j, bool llegada) async {
+    final actual = _parse(llegada ? j.horaInicio : j.horaFinal) ?? TimeOfDay.now();
     final t = await showTimePicker(
       context: context,
       initialTime: actual,
@@ -152,14 +157,45 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
     if (t == null || !mounted) return;
     setState(() {
       if (llegada) {
-        _horaInicio = _fmt(t);
+        j.horaInicio = _fmt(t);
       } else {
-        _horaFinal = _fmt(t);
+        j.horaFinal = _fmt(t);
       }
     });
   }
 
-  int? get _minutos => minutosEntre(_horaInicio, _horaFinal);
+  Future<void> _elegirFecha(Jornada j) async {
+    final d = await showDatePicker(
+      context: context,
+      initialDate: j.fecha,
+      firstDate: DateTime(2024),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+      helpText: 'Día de trabajo',
+    );
+    if (d == null || !mounted) return;
+    setState(() => j.fecha = DateTime(d.year, d.month, d.day));
+  }
+
+  /// Nueva jornada: el día siguiente al último registrado, sin horas.
+  void _anadirJornada() {
+    final ultima = _jornadas.isEmpty ? DateTime.now() : _jornadas.last.fecha;
+    setState(() => _jornadas
+        .add(Jornada(fecha: ultima.add(const Duration(days: 1)))));
+  }
+
+  void _quitarJornada(Jornada j) {
+    setState(() {
+      _jornadas.remove(j);
+      if (_jornadas.isEmpty) _jornadas.add(Jornada(fecha: DateTime.now()));
+    });
+  }
+
+  /// Minutos de todas las jornadas completas.
+  int get _minutosTotal => _jornadas.fold(0, (a, j) => a + (j.minutos ?? 0));
+
+  /// Jornadas con fecha y las dos horas válidas.
+  List<Jornada> get _jornadasCompletas =>
+      _jornadas.where((j) => j.completa).toList();
 
   // ---------------------------------------------------------------------------
   // Líneas
@@ -203,9 +239,10 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
   Future<void> _guardar() async {
     FocusScope.of(context).unfocus();
     if (_pedido == null) return;
-    if (_minutos == null) {
-      _msg(_horaInicio.isEmpty || _horaFinal.isEmpty
-          ? 'Indica la hora de llegada y de salida del domicilio'
+    final jornadas = _jornadasCompletas;
+    if (jornadas.isEmpty) {
+      _msg(_jornadas.any((j) => j.horaInicio.isEmpty || j.horaFinal.isEmpty)
+          ? 'Indica la hora de llegada y de salida de cada jornada'
           : 'La hora de salida debe ser posterior a la de llegada');
       return;
     }
@@ -232,8 +269,7 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
         referencia: _pedido!.referencia,
         usuario: session.usuarioForRequests,
         equipo: session.readEquipo(),
-        horaInicio: _horaInicio,
-        horaFinal: _horaFinal,
+        jornadas: jornadas,
         lineas: relevantes,
         latitud: lat,
         longitud: lng,
@@ -370,7 +406,6 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
         : [contacto.nombre, telefonos]
             .where((s) => s.trim().isNotEmpty)
             .join(' · ');
-    final min = _minutos;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -399,7 +434,7 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
                 _dato('Fecha', fecha),
                 _dato('Nº pedido / presupuesto', p.referencia),
                 _dato('Técnico/s', tecnicos),
-                _filaHoras(t, min),
+                _bloqueJornadas(t),
                 _dato('Cliente', p.cliente),
                 _dato('Dirección de la instalación',
                     UiText.limpiarDireccion(p.direccionInstalacion)),
@@ -438,30 +473,47 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
     );
   }
 
-  Widget _filaHoras(TextTheme t, int? min) {
+  /// Horas del parte: una fila por día trabajado. La instalación puede
+  /// ocupar varias jornadas y el tiempo total es la suma de todas.
+  Widget _bloqueJornadas(TextTheme t) {
+    final varias = _jornadas.length > 1;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 128,
-            child: Text('Hora llegada / salida',
-                style: t.bodySmall?.copyWith(color: AppColors.textMuted)),
+          Row(
+            children: [
+              SizedBox(
+                width: 128,
+                child: Text(varias ? 'Jornadas' : 'Hora llegada / salida',
+                    style: t.bodySmall?.copyWith(color: AppColors.textMuted)),
+              ),
+              Expanded(
+                child: Text(
+                  _minutosTotal == 0
+                      ? ''
+                      : varias
+                          ? '${formatoHoras(_minutosTotal)} · ${_jornadasCompletas.length} jornadas'
+                          : formatoHoras(_minutosTotal),
+                  style: t.bodySmall?.copyWith(
+                      color: AppColors.primaryDark, fontWeight: FontWeight.w700),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ],
           ),
-          _horaChip(_horaInicio, () => _elegirHora(true)),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 6),
-            child: Text('—'),
-          ),
-          _horaChip(_horaFinal, () => _elegirHora(false)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              min == null ? '' : formatoHoras(min),
-              style: t.bodySmall?.copyWith(
-                  color: AppColors.primaryDark, fontWeight: FontWeight.w700),
-              textAlign: TextAlign.right,
+          for (final j in _jornadas) _filaJornada(t, j),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _anadirJornada,
+              style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  visualDensity: VisualDensity.compact),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Añadir otro día'),
             ),
           ),
         ],
@@ -469,24 +521,67 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
     );
   }
 
-  Widget _horaChip(String valor, VoidCallback onTap) {
-    final vacio = valor.isEmpty;
+  Widget _filaJornada(TextTheme t, Jornada j) {
+    final min = j.minutos;
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 92,
+            child: _chip(_diaCorto.format(j.fecha), () => _elegirFecha(j),
+                resaltado: false),
+          ),
+          const SizedBox(width: 6),
+          _horaChip(j.horaInicio, () => _elegirHora(j, true)),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6),
+            child: Text('—'),
+          ),
+          _horaChip(j.horaFinal, () => _elegirHora(j, false)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              min == null ? '' : formatoHoras(min),
+              style: t.bodySmall?.copyWith(color: AppColors.textMuted),
+              textAlign: TextAlign.right,
+            ),
+          ),
+          if (_jornadas.length > 1)
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.delete_outline,
+                  size: 20, color: AppColors.errorFg),
+              tooltip: 'Quitar este día',
+              onPressed: () => _quitarJornada(j),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _horaChip(String valor, VoidCallback onTap) =>
+      _chip(valor.isEmpty ? '__:__' : valor, onTap, resaltado: valor.isEmpty);
+
+  /// Botón-etiqueta editable. [resaltado] lo marca en rojo cuando falta.
+  Widget _chip(String texto, VoidCallback onTap, {required bool resaltado}) {
     return Material(
-      color: vacio ? AppColors.errorTint : AppColors.surface,
+      color: resaltado ? AppColors.errorTint : AppColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.brSm,
-        side: BorderSide(color: vacio ? AppColors.errorFg : AppColors.borderStrong),
+        side: BorderSide(
+            color: resaltado ? AppColors.errorFg : AppColors.borderStrong),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          child: Text(vacio ? '__:__' : valor,
+          child: Text(texto,
               style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: vacio ? AppColors.errorFg : null)),
+                  color: resaltado ? AppColors.errorFg : null)),
         ),
       ),
     );

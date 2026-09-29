@@ -28,6 +28,10 @@ void main() {
       'existe': true,
       'pedido': '71425',
       'horas': {'hora_inicio': '08:30', 'hora_final': '11:00'},
+      'jornadas': [
+        {'fecha': '2026-09-21', 'hora_inicio': '08:30', 'hora_final': '11:00'},
+        {'fecha': '2026-09-22', 'hora_inicio': '09:00', 'hora_final': '13:30'},
+      ],
       'meta': {'usuario': 'joseluis', 'equipo': 'CLM1',
         'fecha_creacion': '2026-09-21 09:00:00', 'fecha_edicion': '2026-09-21 11:05:00'},
       'lineas': [
@@ -61,6 +65,11 @@ void main() {
     expect(p.defecto.first.relevante, isTrue); // previsión sin consumo cuenta
     expect(p.defecto.last.relevante, isFalse);
     expect(minutosEntre(p.horaInicio, p.horaFinal), 150);
+    // Instalación de dos días: se conservan las dos jornadas.
+    expect(p.jornadas, hasLength(2));
+    expect(p.jornadas.first.fecha, DateTime(2026, 9, 21));
+    expect(p.jornadas.first.minutos, 150);
+    expect(p.jornadas.last.minutos, 270);
   });
 
   test('MaterialLinea.toJson formatea cantidades y precio', () {
@@ -85,6 +94,53 @@ void main() {
     expect(formatoDesviacion(0), '0');
     expect(formatoDesviacion(2), '+2');
     expect(formatoDesviacion(-1.5), '-1,5');
+  });
+
+  group('Jornada', () {
+    test('calcula los minutos y sabe si está completa', () {
+      final j = Jornada(fecha: DateTime(2026, 9, 29));
+      expect(j.completa, isFalse);
+      expect(j.minutos, isNull);
+      j.horaInicio = '08:00';
+      expect(j.completa, isFalse); // falta la salida
+      j.horaFinal = '14:30';
+      expect(j.minutos, 390);
+      expect(j.completa, isTrue);
+      j.horaFinal = '07:00'; // salida anterior a la llegada
+      expect(j.completa, isFalse);
+    });
+
+    test('toJson manda la fecha en ISO', () {
+      final j = Jornada(
+          fecha: DateTime(2026, 3, 7), horaInicio: '9:05', horaFinal: '17:00');
+      expect(j.toJson(), {
+        'fecha': '2026-03-07',
+        'hora_inicio': '9:05',
+        'hora_final': '17:00',
+      });
+    });
+
+    test('fromJson tolera una fecha con hora o vacía', () {
+      expect(Jornada.fromJson({'fecha': '2026-09-29 00:00:00'}).fecha,
+          DateTime(2026, 9, 29));
+      expect(Jornada.fromJson({'fecha': ''}).completa, isFalse);
+    });
+  });
+
+  test('ParteResumen suma las jornadas del parte', () {
+    final d = PartesMateriales.fromJson({
+      'success': true,
+      'partes': [
+        {'pedido': '71425', 'num_jornadas': 3, 'minutos_total': '810',
+          'primera_fecha': '2026-09-21', 'ultima_fecha': '2026-09-23',
+          'num_lineas': 5, 'total_sin_iva': '0.00'},
+      ],
+    });
+    final p = d.partes.single;
+    expect(p.numJornadas, 3);
+    expect(formatoHoras(p.minutosTotal), '13 h 30 min');
+    expect(p.primeraFecha, '2026-09-21');
+    expect(p.ultimaFecha, '2026-09-23');
   });
 
   test('MaterialCatalogo se convierte en línea guardando el IdGotel', () {

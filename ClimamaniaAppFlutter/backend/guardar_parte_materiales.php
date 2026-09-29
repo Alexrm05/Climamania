@@ -8,7 +8,14 @@
 // ClimaInstal_ControlUbicacionesEventos (tipo PARTE_MATERIALES) sin que el
 // usuario intervenga; si no llegan, se guarda el parte igualmente.
 //
-// POST: referencia, usuario, equipo, hora_inicio (HH:MM), hora_final (HH:MM),
+// Las horas son una lista de jornadas (la instalación puede durar varios
+// días); el material y el técnico son del parte entero. Las versiones
+// antiguas de la app mandan un solo par hora_inicio/hora_final: se guarda
+// como una jornada con la fecha de hoy.
+//
+// POST: referencia, usuario, equipo,
+//       jornadas = JSON [{fecha (YYYY-MM-DD), hora_inicio, hora_final}],
+//       hora_inicio (HH:MM), hora_final (HH:MM) -> solo compatibilidad,
 //       latitud, longitud (opcionales),
 //       lineas = JSON [{articulo, articulo_padre, descripcion, unidad,
 //                       cantidad_prevista, cantidad, precio_unitario_sin_iva}]
@@ -20,6 +27,7 @@ error_reporting(E_ALL);
 require_once __DIR__ . "/presupuestos_api_common.php";
 require_once __DIR__ . "/conexion.php";
 require_once __DIR__ . "/ubicaciones_eventos_common.php";
+require_once __DIR__ . "/parte_jornadas_common.php";
 
 $API_KEY = "TEST123";
 presup_require_api_key($API_KEY);
@@ -47,6 +55,7 @@ function pm_num($v): float
 $pedido = presup_normalize_text(presup_request_value("referencia"), 64);
 $usuario = presup_normalize_text(presup_request_value("usuario"), 100);
 $equipo = presup_normalize_text(presup_request_value("equipo"), 100);
+$jornadasRaw = presup_request_value("jornadas");
 $horaInicio = pm_parse_time((string)presup_request_value("hora_inicio"));
 $horaFinal = pm_parse_time((string)presup_request_value("hora_final"));
 $latitud = trim((string)presup_request_value("latitud"));
@@ -56,12 +65,27 @@ $lineasRaw = presup_request_value("lineas");
 if ($pedido === "") {
     presup_json_exit(["success" => false, "message" => "Referencia requerida"], 400);
 }
-if ($horaInicio === null || $horaFinal === null) {
-    presup_json_exit(["success" => false, "message" => "Indica la hora de llegada y de salida del domicilio"], 400);
+// Jornadas. Si la app no las manda (versión antigua), se construye una con
+// el par de horas suelto y la fecha de hoy.
+if ($jornadasRaw === null || $jornadasRaw === "") {
+    if ($horaInicio === null || $horaFinal === null) {
+        presup_json_exit(["success" => false, "message" => "Indica la hora de llegada y de salida del domicilio"], 400);
+    }
+    $jornadasRaw = [[
+        "fecha" => date("Y-m-d"),
+        "hora_inicio" => $horaInicio,
+        "hora_final" => $horaFinal
+    ]];
 }
-if ($horaFinal <= $horaInicio) {
-    presup_json_exit(["success" => false, "message" => "La hora de salida debe ser posterior a la de llegada"], 400);
+$norm = clm_jornadas_normaliza($jornadasRaw);
+if ($norm["error"] !== "") {
+    presup_json_exit(["success" => false, "message" => $norm["error"]], 400);
 }
+$jornadas = $norm["jornadas"];
+// Las líneas siguen llevando las horas de la primera jornada: así los
+// listados y las versiones antiguas de la app siguen funcionando.
+$horaInicio = $jornadas[0]["hora_inicio"];
+$horaFinal = $jornadas[0]["hora_final"];
 
 $lineasIn = is_string($lineasRaw) ? json_decode($lineasRaw, true) : $lineasRaw;
 if (!is_array($lineasIn) || empty($lineasIn)) {
@@ -143,6 +167,8 @@ try {
         $ins->execute($params);
     }
 
+    clm_jornadas_guarda($pdo, $pedido, $jornadas, $usuario, $equipo);
+
     // Ubicación silenciosa: solo si la app pudo obtenerla.
     $ubicacionRegistrada = false;
     if ($latitud !== "" && $longitud !== "") {
@@ -165,12 +191,16 @@ try {
 
     $pdo->commit();
 
-    $minutos = (strtotime("1970-01-01 " . $horaFinal) - strtotime("1970-01-01 " . $horaInicio)) / 60;
+    $minutos = 0;
+    foreach ($jornadas as $j) {
+        $minutos += clm_jornada_minutos($j["hora_inicio"], $j["hora_final"]);
+    }
 
     presup_json_exit([
         "success" => true,
         "message" => $existia ? "Parte de trabajo actualizado" : "Parte de trabajo guardado",
         "num_lineas" => count($lineas),
+        "num_jornadas" => count($jornadas),
         "minutos_invertidos" => (int)$minutos,
         "ubicacion_registrada" => $ubicacionRegistrada
     ]);
@@ -179,7 +209,7 @@ try {
         $pdo->rollBack();
     }
     if ($e->getCode() === "42S02") {
-        presup_json_exit(["success" => false, "message" => "No existe la tabla ClimaInstal_ParteMateriales. Ejecuta el SQL del escandallo."], 200);
+        presup_json_exit(["success" => false, "message" => "Falta una tabla del escandallo (ParteMateriales o ParteJornadas). Ejecuta el SQL pendiente."], 200);
     }
     presup_json_exit(["success" => false, "message" => "ERROR: " . $e->getMessage()], 200);
 } catch (Throwable $e) {

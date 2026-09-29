@@ -369,8 +369,18 @@ class _PartesMaterialesScreenState extends State<PartesMaterialesScreen> {
   }
 
   Widget _parteItem(TextTheme t, ParteResumen p) {
-    final min = minutosEntre(p.horaInicio, p.horaFinal);
-    final fecha = DateTime.tryParse(p.fechaCreacion);
+    // El parte puede ocupar varios días: se muestra el rango y el total.
+    final min = p.minutosTotal > 0
+        ? p.minutosTotal
+        : minutosEntre(p.horaInicio, p.horaFinal);
+    final desde = DateTime.tryParse(p.primeraFecha) ??
+        DateTime.tryParse(p.fechaCreacion);
+    final hasta = DateTime.tryParse(p.ultimaFecha);
+    final dias = desde == null
+        ? ''
+        : hasta == null || hasta == desde
+            ? _corta.format(desde)
+            : '${_corta.format(desde)} – ${_corta.format(hasta)}';
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Material(
@@ -402,9 +412,12 @@ class _PartesMaterialesScreenState extends State<PartesMaterialesScreen> {
                       if (p.cliente.isNotEmpty) Text(p.cliente, style: t.bodyMedium),
                       Text(
                         [
-                          if (fecha != null) _corta.format(fecha),
-                          if (p.horaInicio.isNotEmpty) '${p.horaInicio}–${p.horaFinal}',
-                          if (min != null) formatoHoras(min),
+                          if (dias.isNotEmpty) dias,
+                          if (p.numJornadas > 1)
+                            '${p.numJornadas} jornadas'
+                          else if (p.horaInicio.isNotEmpty)
+                            '${p.horaInicio}–${p.horaFinal}',
+                          if (min != null && min > 0) formatoHoras(min),
                           '${p.numLineas} material${p.numLineas == 1 ? '' : 'es'}',
                         ].join(' · '),
                         style: t.bodySmall?.copyWith(color: AppColors.textMuted),

@@ -73,6 +73,51 @@ class MaterialLinea {
       };
 }
 
+/// Una jornada del parte: un día de trabajo en el domicilio, con su hora de
+/// llegada y de salida. Una instalación puede ocupar varias.
+/// Mutable: la pantalla la edita en sitio.
+class Jornada {
+  DateTime fecha;
+  String horaInicio; // HH:MM
+  String horaFinal; // HH:MM
+
+  Jornada({
+    required this.fecha,
+    this.horaInicio = '',
+    this.horaFinal = '',
+  });
+
+  /// Minutos trabajados; null si las horas aún no son válidas.
+  int? get minutos => minutosEntre(horaInicio, horaFinal);
+
+  bool get completa => minutos != null;
+
+  static final _iso = RegExp(r'^(\d{4})-(\d{2})-(\d{2})');
+
+  factory Jornada.fromJson(Map<String, dynamic> j) {
+    final raw = UiText.sanitizeDbValue(j['fecha']?.toString());
+    final m = _iso.firstMatch(raw);
+    return Jornada(
+      fecha: m == null
+          ? DateTime.now()
+          : DateTime(int.parse(m.group(1)!), int.parse(m.group(2)!),
+              int.parse(m.group(3)!)),
+      horaInicio: UiText.sanitizeDbValue(j['hora_inicio']?.toString()),
+      horaFinal: UiText.sanitizeDbValue(j['hora_final']?.toString()),
+    );
+  }
+
+  String get fechaIso => '${fecha.year.toString().padLeft(4, '0')}-'
+      '${fecha.month.toString().padLeft(2, '0')}-'
+      '${fecha.day.toString().padLeft(2, '0')}';
+
+  Map<String, dynamic> toJson() => {
+        'fecha': fechaIso,
+        'hora_inicio': horaInicio,
+        'hora_final': horaFinal,
+      };
+}
+
 /// Material del catálogo del escandallo (ClimaSinc_ClimaInstal_Consumibles).
 /// [articulo] es el IdGotel: lo que se guarda en el parte.
 class MaterialCatalogo {
@@ -123,6 +168,9 @@ class ParteMateriales {
   final String equipo;
   final String fechaCreacion;
   final String fechaEdicion;
+
+  /// Días trabajados en la instalación. Vacío si el parte es nuevo.
+  final List<Jornada> jornadas;
   final List<MaterialLinea> lineas;
 
   /// Materiales por defecto (ClimaInstal_ParteMateriales_Relacionados).
@@ -137,6 +185,7 @@ class ParteMateriales {
     required this.equipo,
     required this.fechaCreacion,
     required this.fechaEdicion,
+    required this.jornadas,
     required this.lineas,
     required this.defecto,
   });
@@ -169,6 +218,10 @@ class ParteMateriales {
       equipo: s(meta, 'equipo'),
       fechaCreacion: s(meta, 'fecha_creacion'),
       fechaEdicion: s(meta, 'fecha_edicion'),
+      jornadas: [
+        for (final e in (j['jornadas'] is List ? j['jornadas'] as List : const []))
+          if (e is Map) Jornada.fromJson(Map<String, dynamic>.from(e)),
+      ],
       lineas: list('lineas'),
       defecto: list('defecto', porDefecto: true),
     );
@@ -214,6 +267,10 @@ class ParteResumen {
   final String equipo;
   final int numLineas;
   final double totalSinIva;
+  final int numJornadas;
+  final int minutosTotal;
+  final String primeraFecha;
+  final String ultimaFecha;
 
   const ParteResumen({
     required this.pedido,
@@ -225,6 +282,10 @@ class ParteResumen {
     required this.equipo,
     required this.numLineas,
     required this.totalSinIva,
+    this.numJornadas = 0,
+    this.minutosTotal = 0,
+    this.primeraFecha = '',
+    this.ultimaFecha = '',
   });
 
   factory ParteResumen.fromJson(Map<String, dynamic> j) {
@@ -239,6 +300,10 @@ class ParteResumen {
       equipo: s('equipo'),
       numLineas: int.tryParse('${j['num_lineas']}') ?? 0,
       totalSinIva: _num(j['total_sin_iva']),
+      numJornadas: int.tryParse('${j['num_jornadas']}') ?? 0,
+      minutosTotal: int.tryParse('${j['minutos_total']}') ?? 0,
+      primeraFecha: s('primera_fecha'),
+      ultimaFecha: s('ultima_fecha'),
     );
   }
 }

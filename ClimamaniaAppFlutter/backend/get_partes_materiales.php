@@ -17,6 +17,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once "conexion.php";
 require_once __DIR__ . "/consumibles_common.php";
+require_once __DIR__ . "/parte_jornadas_common.php";
 
 $API_KEY = "TEST123";
 
@@ -82,9 +83,21 @@ try {
     );
     $stmt->execute($params);
 
+    $filasPartes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Jornadas de cada parte: la instalación puede ocupar varios días, así
+    // que el tiempo invertido es la suma de todas.
     $partes = [];
-    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+    foreach ($filasPartes as $r) {
+        $jornadas = clm_jornadas_de_pedido($pdo, (string)$r["pedido"]);
+        if (empty($jornadas)) {
+            $jornadas = clm_jornada_heredada($r);
+        }
         $partes[] = [
+            "num_jornadas" => count($jornadas),
+            "minutos_total" => array_sum(array_column($jornadas, "minutos")),
+            "primera_fecha" => $jornadas[0]["fecha"] ?? "",
+            "ultima_fecha" => empty($jornadas) ? "" : $jornadas[count($jornadas) - 1]["fecha"],
             "pedido" => (string)$r["pedido"],
             "cliente" => (string)($r["cliente"] ?? ""),
             "fecha_creacion" => (string)$r["fecha_creacion"],

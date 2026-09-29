@@ -3,7 +3,11 @@
 //
 // Respuesta:
 //   existe   -> true si el pedido ya tiene parte guardado
-//   horas    -> hora_inicio / hora_final (HH:MM)
+//   jornadas -> [{fecha, hora_inicio, hora_final, minutos}]: la instalación
+//               puede ocupar varios días. Los partes anteriores a la tabla
+//               de jornadas devuelven una deducida de sus horas.
+//   horas    -> hora_inicio / hora_final de la primera jornada (compatibilidad
+//               con versiones antiguas de la app)
 //   meta     -> usuario, equipo, fecha_creacion, fecha_edicion
 //   lineas   -> filas guardadas (ref, descripción, unidad, prevista, real, precio)
 //               "articulo" es el IdGotel del material y "codigo" su
@@ -27,6 +31,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once "conexion.php";
 require_once __DIR__ . "/consumibles_common.php";
+require_once __DIR__ . "/parte_jornadas_common.php";
 
 $API_KEY = "TEST123";
 
@@ -187,6 +192,19 @@ try {
         }
     }
 
+    // Jornadas: si el parte es anterior a la tabla, se deduce una de las
+    // horas guardadas en las líneas para no perder lo ya registrado.
+    $jornadas = clm_jornadas_de_pedido($pdo, $pedido);
+    if (empty($jornadas) && !empty($rows)) {
+        $jornadas = clm_jornada_heredada($rows[0]);
+    }
+    if (!empty($jornadas)) {
+        $horas = [
+            "hora_inicio" => $jornadas[0]["hora_inicio"],
+            "hora_final" => $jornadas[0]["hora_final"]
+        ];
+    }
+
     // Catálogo de consumibles: pasa las referencias a IdGotel (lo que se
     // guarda) y añade el código legible. Los materiales por defecto se
     // cargaron con el código de PrestaShop, así que se resuelven aquí.
@@ -210,6 +228,8 @@ try {
         "existe" => !empty($rows),
         "pedido" => $pedido,
         "horas" => $horas,
+        "jornadas" => $jornadas,
+        "minutos_total" => array_sum(array_column($jornadas, "minutos")),
         "meta" => $meta,
         "padres" => $padres,
         "lineas" => $lineas,
