@@ -84,6 +84,14 @@ class AppDrawer extends StatelessWidget {
               label: 'Escandallo',
               onTap: () => _goBranch(context, 4),
             ),
+            _DrawerItem(
+              icon: Icons.qr_code_2,
+              label: 'QR Habilitación empresa instaladora',
+              onTap: () {
+                Navigator.of(context).pop();
+                context.push('/qr-habilitacion');
+              },
+            ),
             // Web solo vive aquí: es la rama 5 del shell, sin pestaña.
             _DrawerItem(
                 icon: Icons.language,
@@ -129,18 +137,24 @@ class _DrawerItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        height: 50,
+        // Altura mínima, no fija: las etiquetas largas ocupan dos líneas en
+        // lugar de desbordarse.
+        constraints: const BoxConstraints(minHeight: 50),
         alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: 18),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
         child: Row(
           children: [
             Icon(icon, size: 22, color: color),
             const SizedBox(width: 14),
-            Text(label,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
-                    ?.copyWith(color: color)),
+            Expanded(
+              child: Text(label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(color: color)),
+            ),
           ],
         ),
       ),

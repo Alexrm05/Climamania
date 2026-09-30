@@ -26,6 +26,7 @@ import '../features/visitas/cerrar_gestion_screen.dart';
 import '../features/visitas/visita_detalle_screen.dart';
 import '../features/visitas/visita_enviar_screen.dart';
 import '../features/visitas/visitas_pendientes_screen.dart';
+import '../features/shell/qr_habilitacion_screen.dart';
 import '../features/shell/app_shell.dart';
 import '../services/session_service.dart';
 
@@ -278,6 +279,12 @@ GoRouter createRouter(SessionService session) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             SearchScreen(initialQuery: state.extra as String?),
+      ),
+      // QR de habilitación como empresa instaladora (menú lateral).
+      GoRoute(
+        path: '/qr-habilitacion',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const QrHabilitacionScreen(),
       ),
       // Pantalla provisional empujada sobre el shell (con barra y volver).
       GoRoute(
