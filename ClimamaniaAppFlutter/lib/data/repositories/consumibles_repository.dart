@@ -29,6 +29,30 @@ class ConsumiblesRepository {
     }
   }
 
+  /// Pedidos que ya ha enviado el instalador. Solo consulta: una vez
+  /// enviado, el pedido no se modifica desde la app.
+  Future<List<PedidoEnviado>> getMisPedidos({
+    required String usuario,
+    required String rol,
+  }) async {
+    try {
+      final json = await _api.getJson(
+        AppConfig.getPedidosConsumibles,
+        query: {'usuario': usuario, 'rol': rol},
+        noCache: true,
+      );
+      if (json['success'] != true) return const [];
+      final raw = json['pedidos'];
+      if (raw is! List) return const [];
+      return [
+        for (final e in raw)
+          if (e is Map) PedidoEnviado.fromJson(Map<String, dynamic>.from(e)),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
   /// Envía el pedido. El servidor recalcula los precios y responde con la
   /// referencia (PC-000123).
   Future<ResultadoPedidoConsumibles> pedir({

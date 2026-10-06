@@ -23,7 +23,7 @@ class TarifaConsumiblesScreen extends StatefulWidget {
       _TarifaConsumiblesScreenState();
 }
 
-enum _Orden { codigo, nombre }
+enum _Orden { alfabetico, codigo }
 
 class _TarifaConsumiblesScreenState extends State<TarifaConsumiblesScreen> {
   final _buscarCtrl = TextEditingController();
@@ -31,7 +31,7 @@ class _TarifaConsumiblesScreenState extends State<TarifaConsumiblesScreen> {
 
   List<ConsumibleTarifa> _articulos = [];
   bool _cargando = true;
-  _Orden _orden = _Orden.codigo;
+  _Orden _orden = _Orden.alfabetico;
   String _filtro = '';
 
   @override
@@ -61,9 +61,11 @@ class _TarifaConsumiblesScreenState extends State<TarifaConsumiblesScreen> {
     final lista = f.isEmpty
         ? [..._articulos]
         : _articulos.where((a) => a.textoBusqueda.contains(f)).toList();
+    // Por defecto alfabético por la descripción, que es el texto que lee el
+    // instalador; el orden por código queda a un toque.
     lista.sort((a, b) => _orden == _Orden.codigo
         ? a.codigo.compareTo(b.codigo)
-        : a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase()));
+        : a.descripcion.toLowerCase().compareTo(b.descripcion.toLowerCase()));
     return lista;
   }
 
@@ -107,14 +109,20 @@ class _TarifaConsumiblesScreenState extends State<TarifaConsumiblesScreen> {
       appBar: AppBar(
         title: const Text('Tarifa de consumibles'),
         actions: [
+          IconButton(
+            tooltip: 'Mis pedidos',
+            icon: const Icon(Icons.receipt_outlined),
+            onPressed: () => context.push('/mis-pedidos-consumibles'),
+          ),
           PopupMenuButton<_Orden>(
             tooltip: 'Ordenar',
             icon: const Icon(Icons.sort),
             initialValue: _orden,
             onSelected: (v) => setState(() => _orden = v),
             itemBuilder: (_) => const [
+              PopupMenuItem(
+                  value: _Orden.alfabetico, child: Text('Alfabético')),
               PopupMenuItem(value: _Orden.codigo, child: Text('Por código')),
-              PopupMenuItem(value: _Orden.nombre, child: Text('Por nombre')),
             ],
           ),
         ],
@@ -130,6 +138,7 @@ class _TarifaConsumiblesScreenState extends State<TarifaConsumiblesScreen> {
             ),
       body: Column(
         children: [
+          _aviso(t),
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm),
@@ -168,10 +177,8 @@ class _TarifaConsumiblesScreenState extends State<TarifaConsumiblesScreen> {
                         : ListView.builder(
                             padding: const EdgeInsets.fromLTRB(
                                 AppSpacing.lg, 0, AppSpacing.lg, 96),
-                            itemCount: lista.length + 1,
-                            itemBuilder: (_, i) => i == lista.length
-                                ? _pie(t)
-                                : _articuloCard(t, lista[i]),
+                            itemCount: lista.length,
+                            itemBuilder: (_, i) => _articuloCard(t, lista[i]),
                           ),
                   ),
           ),
@@ -180,13 +187,32 @@ class _TarifaConsumiblesScreenState extends State<TarifaConsumiblesScreen> {
     );
   }
 
-  Widget _pie(TextTheme t) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-        child: Text(
-          'Precios sin IVA. Los artículos con formato (rollo, tira, caja…) '
-          'se venden por formato completo.',
-          textAlign: TextAlign.center,
-          style: t.bodySmall?.copyWith(color: AppColors.textMuted),
+  /// Va arriba y bien visible, no al final de la lista: nadie debe poder
+  /// decir que no lo ha visto.
+  Widget _aviso(TextTheme t) => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: AppColors.infoTint,
+          borderRadius: AppRadius.brMd,
+          border: Border.all(color: AppColors.infoFg.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline, size: 20, color: AppColors.infoFg),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                'Precios sin IVA. Los artículos con formato (rollo, tira, '
+                'caja…) se venden por formato completo.',
+                style: t.bodyMedium?.copyWith(
+                    color: AppColors.infoFg, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
         ),
       );
 

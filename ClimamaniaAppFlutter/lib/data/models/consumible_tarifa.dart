@@ -136,3 +136,87 @@ String formatoUnidades(double v) {
   if (s.endsWith('.0')) s = s.substring(0, s.length - 2);
   return s.replaceAll('.', ',');
 }
+
+/// Línea de un pedido ya enviado (solo lectura).
+class LineaPedidoEnviado {
+  final String codigo;
+  final String descripcion;
+  final String textoFormato;
+  final String unidadVenta;
+  final double cantidadFormatos;
+  final double cantidadUnidades;
+  final double precioFormato;
+  final double importeLinea;
+
+  const LineaPedidoEnviado({
+    required this.codigo,
+    required this.descripcion,
+    required this.textoFormato,
+    required this.unidadVenta,
+    required this.cantidadFormatos,
+    required this.cantidadUnidades,
+    required this.precioFormato,
+    required this.importeLinea,
+  });
+
+  factory LineaPedidoEnviado.fromJson(Map<String, dynamic> j) {
+    String s(String k) => UiText.sanitizeDbValue(j[k]?.toString());
+    return LineaPedidoEnviado(
+      codigo: s('codigo'),
+      descripcion: s('descripcion'),
+      textoFormato: s('texto_formato'),
+      unidadVenta: s('unidad_venta'),
+      cantidadFormatos: _num(j['cantidad_formatos']),
+      cantidadUnidades: _num(j['cantidad_unidades']),
+      precioFormato: _num(j['precio_formato']),
+      importeLinea: _num(j['importe_linea']),
+    );
+  }
+}
+
+/// Pedido de consumibles ya enviado. No se puede modificar desde la app:
+/// esto es solo para que el instalador vea lo que pidió.
+class PedidoEnviado {
+  final String referencia;
+  final String fecha; // YYYY-MM-DD HH:MM:SS
+  final String equipo;
+  final String estado;
+  final String observaciones;
+  final int numLineas;
+  final double totalSinIva;
+
+  /// Algún correo no salió: la oficina puede no haberse enterado.
+  final bool avisoCorreo;
+  final List<LineaPedidoEnviado> lineas;
+
+  const PedidoEnviado({
+    required this.referencia,
+    required this.fecha,
+    required this.equipo,
+    required this.estado,
+    required this.observaciones,
+    required this.numLineas,
+    required this.totalSinIva,
+    required this.avisoCorreo,
+    required this.lineas,
+  });
+
+  factory PedidoEnviado.fromJson(Map<String, dynamic> j) {
+    String s(String k) => UiText.sanitizeDbValue(j[k]?.toString());
+    final raw = j['lineas'];
+    return PedidoEnviado(
+      referencia: s('referencia'),
+      fecha: s('fecha'),
+      equipo: s('equipo'),
+      estado: s('estado'),
+      observaciones: s('observaciones'),
+      numLineas: int.tryParse('${j['num_lineas']}') ?? 0,
+      totalSinIva: _num(j['total_sin_iva']),
+      avisoCorreo: j['aviso_correo'] == true,
+      lineas: [
+        for (final e in (raw is List ? raw : const []))
+          if (e is Map) LineaPedidoEnviado.fromJson(Map<String, dynamic>.from(e)),
+      ],
+    );
+  }
+}

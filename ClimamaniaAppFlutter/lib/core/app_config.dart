@@ -71,6 +71,7 @@ class AppConfig {
   // Tarifa de consumibles y pedidos del instalador.
   static const String getTarifaConsumibles = 'get_tarifa_consumibles.php';
   static const String guardarPedidoConsumibles = 'guardar_pedido_consumibles.php';
+  static const String getPedidosConsumibles = 'get_pedidos_consumibles.php';
 
   static const String getParteMateriales = 'get_parte_materiales.php';
   static const String guardarParteMateriales = 'guardar_parte_materiales.php';

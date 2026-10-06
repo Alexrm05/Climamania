@@ -63,6 +63,41 @@ void main() {
     expect(formatoUnidades(0.25), '0,25');
   });
 
+  group('PedidoEnviado', () {
+    test('lee el pedido y sus líneas', () {
+      final p = PedidoEnviado.fromJson({
+        'referencia': 'PC-000001',
+        'fecha': '2026-10-06 18:40:00',
+        'equipo': 'TEST',
+        'estado': 'SOLICITADO',
+        'observaciones': 'Para el lunes',
+        'num_lineas': 2,
+        'total_sin_iva': '10.53',
+        'aviso_correo': false,
+        'lineas': [
+          {'codigo': 'CINST0150005', 'descripcion': 'CANAL 35X30',
+            'texto_formato': 'Tira 2 m', 'unidad_venta': 'metro',
+            'cantidad_formatos': '2.00', 'cantidad_unidades': '4.0000',
+            'precio_formato': '3.51', 'importe_linea': '7.02'},
+        ],
+      });
+      expect(p.referencia, 'PC-000001');
+      expect(p.totalSinIva, 10.53);
+      expect(p.avisoCorreo, isFalse);
+      final l = p.lineas.single;
+      expect(l.codigo, 'CINST0150005');
+      expect(l.cantidadUnidades, 4); // 2 tiras de 2 m
+      expect(l.importeLinea, 7.02);
+    });
+
+    test('marca el pedido cuyo correo no salió', () {
+      final p = PedidoEnviado.fromJson(
+          {'referencia': 'PC-000002', 'aviso_correo': true, 'lineas': []});
+      expect(p.avisoCorreo, isTrue);
+      expect(p.lineas, isEmpty);
+    });
+  });
+
   group('ResultadoPedidoConsumibles', () {
     test('pedido enviado con los dos correos', () {
       final r = ResultadoPedidoConsumibles.fromJson({
