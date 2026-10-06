@@ -26,6 +26,9 @@ import '../features/visitas/cerrar_gestion_screen.dart';
 import '../features/visitas/visita_detalle_screen.dart';
 import '../features/visitas/visita_enviar_screen.dart';
 import '../features/visitas/visitas_pendientes_screen.dart';
+import '../data/models/consumible_tarifa.dart';
+import '../features/consumibles/pedido_consumibles_screen.dart';
+import '../features/consumibles/tarifa_consumibles_screen.dart';
 import '../features/shell/qr_habilitacion_screen.dart';
 import '../features/shell/app_shell.dart';
 import '../services/session_service.dart';
@@ -279,6 +282,19 @@ GoRouter createRouter(SessionService session) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             SearchScreen(initialQuery: state.extra as String?),
+      ),
+      // Tarifa de consumibles y pedido (menú lateral).
+      GoRoute(
+        path: '/tarifa-consumibles',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const TarifaConsumiblesScreen(),
+      ),
+      GoRoute(
+        path: '/pedido-consumibles',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PedidoConsumiblesScreen(
+          lineas: (state.extra as List<LineaPedidoConsumible>?) ?? [],
+        ),
       ),
       // QR de habilitación como empresa instaladora (menú lateral).
       GoRoute(

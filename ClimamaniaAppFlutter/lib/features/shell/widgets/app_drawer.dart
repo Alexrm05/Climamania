@@ -85,6 +85,14 @@ class AppDrawer extends StatelessWidget {
               onTap: () => _goBranch(context, 4),
             ),
             _DrawerItem(
+              icon: Icons.receipt_long_outlined,
+              label: 'Tarifa de consumibles',
+              onTap: () {
+                Navigator.of(context).pop();
+                context.push('/tarifa-consumibles');
+              },
+            ),
+            _DrawerItem(
               icon: Icons.qr_code_2,
               label: 'QR Habilitación empresa instaladora',
               onTap: () {

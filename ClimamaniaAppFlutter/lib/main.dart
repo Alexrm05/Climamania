@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/api/api_client.dart';
 import 'data/repositories/adicionales_repository.dart';
+import 'data/repositories/consumibles_repository.dart';
 import 'data/repositories/materiales_repository.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/home_repository.dart';
@@ -50,6 +51,7 @@ Future<void> main() async {
   final incidenciaRepo = IncidenciaRepository(api);
   final adicionalesRepo = AdicionalesRepository(api);
   final materialesRepo = MaterialesRepository(api);
+  final consumiblesRepo = ConsumiblesRepository(api);
   final locationService = LocationService();
 
   runApp(MultiProvider(
@@ -65,6 +67,7 @@ Future<void> main() async {
       Provider<IncidenciaRepository>.value(value: incidenciaRepo),
       Provider<AdicionalesRepository>.value(value: adicionalesRepo),
       Provider<MaterialesRepository>.value(value: materialesRepo),
+      Provider<ConsumiblesRepository>.value(value: consumiblesRepo),
       Provider<LocationService>.value(value: locationService),
       ChangeNotifierProvider<RefreshSignal>(create: (_) => RefreshSignal()),
       ChangeNotifierProvider<TabHistory>(create: (_) => TabHistory()),

@@ -68,6 +68,10 @@ class AppConfig {
   // de materiales sale de ClimaSinc_ClimaInstal_Consumibles (sincronizada
   // desde PrestaShop), no de la tienda.
   static const String getMaterialesCatalogo = 'get_materiales_catalogo.php';
+  // Tarifa de consumibles y pedidos del instalador.
+  static const String getTarifaConsumibles = 'get_tarifa_consumibles.php';
+  static const String guardarPedidoConsumibles = 'guardar_pedido_consumibles.php';
+
   static const String getParteMateriales = 'get_parte_materiales.php';
   static const String guardarParteMateriales = 'guardar_parte_materiales.php';
   static const String getPartesMateriales = 'get_partes_materiales.php';
