@@ -31,7 +31,9 @@ class ConsumiblesRepository {
 
   /// Pedidos que ya ha enviado el instalador. Solo consulta: una vez
   /// enviado, el pedido no se modifica desde la app.
-  Future<List<PedidoEnviado>> getMisPedidos({
+  /// Devuelve null si el servidor falla, para no confundir un error con
+  /// "todavía no has pedido nada".
+  Future<List<PedidoEnviado>?> getMisPedidos({
     required String usuario,
     required String rol,
   }) async {
@@ -41,7 +43,7 @@ class ConsumiblesRepository {
         query: {'usuario': usuario, 'rol': rol},
         noCache: true,
       );
-      if (json['success'] != true) return const [];
+      if (json['success'] != true) return null;
       final raw = json['pedidos'];
       if (raw is! List) return const [];
       return [
@@ -49,7 +51,7 @@ class ConsumiblesRepository {
           if (e is Map) PedidoEnviado.fromJson(Map<String, dynamic>.from(e)),
       ];
     } catch (_) {
-      return const [];
+      return null;
     }
   }
 

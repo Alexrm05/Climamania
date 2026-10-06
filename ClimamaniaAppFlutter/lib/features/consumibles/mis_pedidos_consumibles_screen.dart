@@ -26,7 +26,7 @@ class _MisPedidosConsumiblesScreenState
     extends State<MisPedidosConsumiblesScreen> {
   static final _fecha = DateFormat('dd/MM/yyyy HH:mm');
 
-  List<PedidoEnviado> _pedidos = [];
+  List<PedidoEnviado>? _pedidos;
   bool _cargando = true;
 
   @override
@@ -57,6 +57,7 @@ class _MisPedidosConsumiblesScreenState
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
+    final pedidos = _pedidos;
     return Scaffold(
       backgroundColor: AppColors.primaryLight,
       appBar: AppBar(title: const Text('Mis pedidos')),
@@ -67,18 +68,21 @@ class _MisPedidosConsumiblesScreenState
               child: ListView(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 children: [
-                  if (_pedidos.isEmpty)
+                  if (pedidos == null || pedidos.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 48),
                       child: Text(
-                        'Todavía no has pedido consumibles.',
+                        pedidos == null
+                            ? 'No se pudieron cargar tus pedidos. Desliza '
+                                'hacia abajo para reintentar.'
+                            : 'Todavía no has pedido consumibles.',
                         textAlign: TextAlign.center,
                         style:
                             t.bodyMedium?.copyWith(color: AppColors.textMuted),
                       ),
                     )
                   else ...[
-                    for (final p in _pedidos) _pedidoCard(t, p),
+                    for (final p in pedidos) _pedidoCard(t, p),
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       'Los pedidos enviados no se pueden modificar desde la '
