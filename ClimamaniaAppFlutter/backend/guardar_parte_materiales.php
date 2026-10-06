@@ -149,7 +149,9 @@ try {
             continue;
         }
         $lineas[$i]["articulo"] = $mat["articulo"];
-        $lineas[$i]["unidad"] = $mat["unidad"];
+        // La columna es VARCHAR(10): una unidad más larga tiraría el guardado
+        // entero con STRICT_TRANS_TABLES.
+        $lineas[$i]["unidad"] = presup_normalize_text($mat["unidad"], 10) ?: "ud";
     }
 
     // Un mismo artículo no puede ir dos veces en el parte: si la app lo
@@ -174,7 +176,8 @@ try {
     $fechaCreacion = null;
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
         $fechaCreacion = $fechaCreacion ?? $r["fecha_creacion"];
-        $clave = (string)$r["articulo"];
+        $matPrevio = $catalogo[strtoupper((string)$r["articulo"])] ?? null;
+        $clave = $matPrevio !== null ? $matPrevio["articulo"] : (string)$r["articulo"];
         if (isset($previas[$clave])) {
             // Duplicado de antes de este cambio: sobra.
             $sobrantes[] = (int)$r["id"];
@@ -196,7 +199,7 @@ try {
     );
     $upd = $pdo->prepare(
         "UPDATE ClimaInstal_ParteMateriales
-            SET articulo_padre = :padre, descripcion = :descripcion, unidad = :unidad,
+            SET articulo = :articulo, articulo_padre = :padre, descripcion = :descripcion, unidad = :unidad,
                 cantidad_prevista = :prevista, cantidad = :cantidad,
                 hora_inicio = NULL, hora_final = NULL, precio_unitario_sin_iva = 0,
                 usuario = :usuario, equipo_instaladores = :equipo, fecha_edicion = NOW()
@@ -232,7 +235,8 @@ try {
         $vistas[$l["articulo"]] = true;
         // fecha_edicion solo se mueve si algo cambió de verdad: GOTEL la usa
         // para detectar qué líneas tiene que reajustar.
-        $igual = (string)$previa["articulo_padre"] === (string)$l["padre"]
+        $igual = (string)$previa["articulo"] === $l["articulo"]
+            && (string)$previa["articulo_padre"] === (string)$l["padre"]
             && (string)$previa["descripcion"] === $l["descripcion"]
             && (string)$previa["unidad"] === $l["unidad"]
             && (float)$previa["cantidad_prevista"] === (float)$prevista
@@ -241,6 +245,7 @@ try {
             continue;
         }
         $upd->execute([
+            ":articulo" => $l["articulo"],
             ":padre" => $l["padre"],
             ":descripcion" => $l["descripcion"],
             ":unidad" => $l["unidad"],

@@ -115,8 +115,11 @@ try {
             "cliente" => (string)($r["cliente"] ?? ""),
             "fecha_creacion" => (string)$r["fecha_creacion"],
             "fecha_edicion" => (string)$r["fecha_edicion"],
-            "hora_inicio" => substr((string)($r["hora_inicio"] ?? ""), 0, 5),
-            "hora_final" => substr((string)($r["hora_final"] ?? ""), 0, 5),
+            // De las jornadas: las líneas de material ya no guardan horas.
+            "hora_inicio" => $jornadas[0]["hora_inicio"] ?? "",
+            "hora_final" => empty($jornadas)
+                ? ""
+                : $jornadas[count($jornadas) - 1]["hora_final"],
             "usuario" => (string)($r["usuario"] ?? ""),
             "equipo" => (string)($r["equipo"] ?? ""),
             "num_lineas" => (int)$r["num_lineas"],

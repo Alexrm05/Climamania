@@ -41,7 +41,7 @@ try {
         // no hay partes, se muestran los primeros del catálogo por código.
         $stmt = $pdo->prepare(
             "SELECT c.IdGotel, c.Codigo, c.Nombre, c.Descripcion, c.UnidadEscandallo, c.Factor"
-             . clm_consumibles_precio_select($pdo, "c") . "
+             . clm_consumibles_precio_select($pdo, "c", true) . "
              FROM ClimaInstal_ParteMateriales pm
              INNER JOIN " . CLM_CONSUMIBLES_TABLA . " c
                      ON c.Codigo = pm.articulo OR c.IdGotel = pm.articulo

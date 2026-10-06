@@ -219,6 +219,11 @@ class ParteMaterialesResumen {
   final int numLineas;
   final String horaInicio;
   final String horaFinal;
+
+  /// Minutos de todas las jornadas. Vale 0 si el servidor es anterior a las
+  /// jornadas: entonces se calcula con las dos horas.
+  final int minutosTotal;
+  final int numJornadas;
   final String fechaEdicion;
   final String usuario;
 
@@ -226,6 +231,8 @@ class ParteMaterialesResumen {
     required this.numLineas,
     required this.horaInicio,
     required this.horaFinal,
+    this.minutosTotal = 0,
+    this.numJornadas = 0,
     required this.fechaEdicion,
     required this.usuario,
   });
@@ -233,6 +240,8 @@ class ParteMaterialesResumen {
   factory ParteMaterialesResumen.fromJson(Map<String, dynamic> j) =>
       ParteMaterialesResumen(
         numLineas: int.tryParse('${j['num_lineas']}') ?? 0,
+        minutosTotal: int.tryParse('${j['minutos_total']}') ?? 0,
+        numJornadas: int.tryParse('${j['num_jornadas']}') ?? 0,
         horaInicio: UiText.sanitizeDbValue(j['hora_inicio']?.toString()),
         horaFinal: UiText.sanitizeDbValue(j['hora_final']?.toString()),
         fechaEdicion: UiText.sanitizeDbValue(j['fecha_edicion']?.toString()),
@@ -240,6 +249,10 @@ class ParteMaterialesResumen {
       );
 
   bool get hecho => numLineas > 0;
+
+  /// Minutos invertidos, de las jornadas o de las dos horas sueltas.
+  int? get minutos =>
+      minutosTotal > 0 ? minutosTotal : minutosEntre(horaInicio, horaFinal);
 }
 
 /// Entrada del histórico (un parte por pedido) de get_partes_materiales.php.
@@ -400,10 +413,15 @@ double cantidadDesdeTexto(String v) {
   return (n.clamp(0, 99999) * 100).round() / 100;
 }
 
-/// Cantidad sin decimales innecesarios: 4 → "4", 2.5 → "2,5".
-String formatoCantidad(double v) =>
-    (v % 1 == 0 ? v.toStringAsFixed(0) : v.toStringAsFixed(1))
-        .replaceAll('.', ',');
+/// Cantidad sin decimales innecesarios: 4 → "4", 2.5 → "2,5", 3.25 → "3,25".
+/// Hasta 2 decimales, que es lo que se guarda, para que el técnico lea
+/// exactamente lo que ha apuntado.
+String formatoCantidad(double v) {
+  var s = v.toStringAsFixed(2);
+  if (s.endsWith('0')) s = s.substring(0, s.length - 1);
+  if (s.endsWith('.0')) s = s.substring(0, s.length - 2);
+  return s.replaceAll('.', ',');
+}
 
 /// Desviación con signo: +2, -1,5, 0.
 String formatoDesviacion(double v) {

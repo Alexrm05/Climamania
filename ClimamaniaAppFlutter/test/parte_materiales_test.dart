@@ -97,9 +97,20 @@ void main() {
     expect(cantidadDesdeTexto('-4'), 0);
   });
 
+  test('lo que se ve es lo que se guarda', () {
+    for (final escrito in ['3,5', '0,13', '12', '4,05', '7,25']) {
+      final v = cantidadDesdeTexto(escrito);
+      expect(cantidadDesdeTexto(formatoCantidad(v)), v, reason: escrito);
+    }
+  });
+
   test('formatoCantidad y formatoDesviacion', () {
     expect(formatoCantidad(4), '4');
     expect(formatoCantidad(2.5), '2,5');
+    expect(formatoCantidad(3.25), '3,25'); // no se redondea a 3,3
+    expect(formatoCantidad(0.13), '0,13');
+    expect(formatoCantidad(12.10), '12,1');
+    expect(formatoDesviacion(-0.25), '-0,25');
     expect(formatoDesviacion(0), '0');
     expect(formatoDesviacion(2), '+2');
     expect(formatoDesviacion(-1.5), '-1,5');
@@ -150,6 +161,27 @@ void main() {
     expect(formatoHoras(p.minutosTotal), '13 h 30 min');
     expect(p.primeraFecha, '2026-09-21');
     expect(p.ultimaFecha, '2026-09-23');
+  });
+
+  group('ParteMaterialesResumen', () {
+    test('usa los minutos de las jornadas', () {
+      final r = ParteMaterialesResumen.fromJson({
+        'num_lineas': 4, 'num_jornadas': 2, 'minutos_total': '570',
+        'hora_inicio': '08:00', 'hora_final': '13:00',
+      });
+      expect(r.hecho, isTrue);
+      expect(r.minutos, 570); // no las 5 h del primer par de horas
+    });
+
+    test('con un servidor antiguo cae a las dos horas sueltas', () {
+      final r = ParteMaterialesResumen.fromJson(
+          {'num_lineas': 2, 'hora_inicio': '08:00', 'hora_final': '13:00'});
+      expect(r.minutos, 300);
+    });
+
+    test('sin horas no inventa minutos', () {
+      expect(ParteMaterialesResumen.fromJson({'num_lineas': 1}).minutos, isNull);
+    });
   });
 
   test('MaterialCatalogo se convierte en línea guardando el código', () {

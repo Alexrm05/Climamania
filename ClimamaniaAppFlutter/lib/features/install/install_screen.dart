@@ -360,10 +360,11 @@ class _InstallScreenState extends State<InstallScreen> {
   Widget _botonEscandallo() {
     final pm = _pedido?.parteMateriales;
     final hecho = pm?.hecho ?? false;
-    final min = hecho ? minutosEntre(pm!.horaInicio, pm.horaFinal) : null;
+    final min = hecho ? pm!.minutos : null;
+    final dias = hecho && pm!.numJornadas > 1 ? ' · ${pm.numJornadas} días' : '';
     final subtitulo = hecho
         ? '${pm!.numLineas} material${pm.numLineas == 1 ? '' : 'es'}'
-            '${min != null ? ' · ${formatoHoras(min)} en domicilio' : ''}'
+            '${min != null ? ' · ${formatoHoras(min)} en domicilio' : ''}$dias'
         : 'Pendiente: materiales gastados y horas en el domicilio';
     final fg = hecho ? AppColors.successFg : AppColors.errorFg;
     final bg = hecho ? AppColors.successTint : AppColors.errorTint;

@@ -8,6 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . "/conexion.php";
 require_once __DIR__ . "/ps_connection_common.php";
+require_once __DIR__ . "/parte_jornadas_common.php";
 
 $API_KEY = "TEST123";
 
@@ -256,7 +257,8 @@ try {
     // se deja a null para no romper la ficha).
     try {
         $stmtPm = $pdo->prepare(
-            "SELECT COUNT(*) AS n, MIN(hora_inicio) AS hi, MAX(hora_final) AS hf,
+            "SELECT COUNT(*) AS n, MIN(hora_inicio) AS hora_inicio,
+                    MAX(hora_final) AS hora_final, MIN(fecha_creacion) AS fecha_creacion,
                     MAX(fecha_edicion) AS fe, MAX(usuario) AS u
              FROM ClimaInstal_ParteMateriales
              WHERE pedido = :ref"
@@ -264,10 +266,19 @@ try {
         $stmtPm->execute([":ref" => $referencia]);
         $pm = $stmtPm->fetch(PDO::FETCH_ASSOC);
         if ($pm && (int)$pm["n"] > 0) {
+            // Las horas viven en las jornadas; en las líneas de material ya
+            // no se guardan. Para los partes antiguos se deducen de ellas.
+            $jornadas = clm_jornadas_de_pedido($pdo, $referencia);
+            if (empty($jornadas)) {
+                $jornadas = clm_jornada_heredada($pm);
+            }
+            $ultima = empty($jornadas) ? null : $jornadas[count($jornadas) - 1];
             $pedido["parte_materiales"] = [
                 "num_lineas" => (int)$pm["n"],
-                "hora_inicio" => substr((string)($pm["hi"] ?? ""), 0, 5),
-                "hora_final" => substr((string)($pm["hf"] ?? ""), 0, 5),
+                "num_jornadas" => count($jornadas),
+                "minutos_total" => array_sum(array_column($jornadas, "minutos")),
+                "hora_inicio" => $jornadas[0]["hora_inicio"] ?? "",
+                "hora_final" => $ultima["hora_final"] ?? "",
                 "fecha_edicion" => (string)($pm["fe"] ?? ""),
                 "usuario" => (string)($pm["u"] ?? "")
             ];

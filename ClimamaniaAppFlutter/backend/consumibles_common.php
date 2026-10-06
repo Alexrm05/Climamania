@@ -140,12 +140,17 @@ function clm_consumibles_precio_columna(PDO $pdo): ?string
 
 /// Trozo de SELECT con el precio del catálogo bajo el alias _precio, o "" si
 /// no hay columna de precio. [$alias] es el alias de la tabla en la consulta.
-function clm_consumibles_precio_select(PDO $pdo, string $alias = ""): string
-{
+/// [$agregado] = true en consultas con GROUP BY: sin envolverlo en MAX(),
+/// ONLY_FULL_GROUP_BY (que viene activo por defecto) tumbaría la consulta.
+function clm_consumibles_precio_select(
+    PDO $pdo,
+    string $alias = "",
+    bool $agregado = false
+): string {
     $col = clm_consumibles_precio_columna($pdo);
     if ($col === null) {
         return "";
     }
-    $pre = $alias !== "" ? "`" . $alias . "`." : "";
-    return ", " . $pre . "`" . $col . "` AS _precio";
+    $ref = ($alias !== "" ? "`" . $alias . "`." : "") . "`" . $col . "`";
+    return ", " . ($agregado ? "MAX($ref)" : $ref) . " AS _precio";
 }
