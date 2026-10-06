@@ -67,7 +67,9 @@ function clm_consumibles_por_claves(PDO $pdo, array $claves): array
     $out = [];
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
         $mat = clm_consumible_salida($r);
-        foreach ([$mat["articulo"], $mat["codigo"]] as $k) {
+        // Indexado también por IdGotel: las versiones de la app anteriores a
+        // octubre de 2026 mandan ese valor y hay que poder traducirlo.
+        foreach ([$mat["articulo"], $mat["id_gotel"]] as $k) {
             if ($k !== "") {
                 $out[strtoupper($k)] = $mat;
             }
