@@ -18,7 +18,18 @@
 //       hora_inicio (HH:MM), hora_final (HH:MM) -> solo compatibilidad,
 //       latitud, longitud (opcionales),
 //       lineas = JSON [{articulo, articulo_padre, descripcion, unidad,
-//                       cantidad_prevista, cantidad, precio_unitario_sin_iva}]
+//                       cantidad_prevista, cantidad}]
+//
+// El artículo se guarda siempre con el código CINST del catálogo
+// (ClimaSinc_ClimaInstal_Consumibles): es la clave con la que GOTEL descuenta
+// el stock de la furgoneta. Si una app antigua manda el IdGotel, se traduce.
+// La unidad también sale del catálogo, el precio se guarda a 0 (GOTEL calcula
+// el coste con sus precios) y las horas quedan vacías: están en
+// ClimaInstal_ParteJornadas.
+//
+// El parte no se borra y se reinserta: se actualizan las líneas que cambian,
+// se insertan las nuevas y se borran las que el técnico quitó. Así los `id`
+// de las que no cambian se conservan, que es como GOTEL sigue el stock.
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -28,6 +39,7 @@ require_once __DIR__ . "/presupuestos_api_common.php";
 require_once __DIR__ . "/conexion.php";
 require_once __DIR__ . "/ubicaciones_eventos_common.php";
 require_once __DIR__ . "/parte_jornadas_common.php";
+require_once __DIR__ . "/consumibles_common.php";
 
 $API_KEY = "TEST123";
 presup_require_api_key($API_KEY);
@@ -82,10 +94,6 @@ if ($norm["error"] !== "") {
     presup_json_exit(["success" => false, "message" => $norm["error"]], 400);
 }
 $jornadas = $norm["jornadas"];
-// Las líneas siguen llevando las horas de la primera jornada: así los
-// listados y las versiones antiguas de la app siguen funcionando.
-$horaInicio = $jornadas[0]["hora_inicio"];
-$horaFinal = $jornadas[0]["hora_final"];
 
 $lineasIn = is_string($lineasRaw) ? json_decode($lineasRaw, true) : $lineasRaw;
 if (!is_array($lineasIn) || empty($lineasIn)) {
@@ -115,8 +123,7 @@ foreach ($lineasIn as $item) {
         "descripcion" => presup_normalize_text((string)($item["descripcion"] ?? ""), 255),
         "unidad" => presup_normalize_text((string)($item["unidad"] ?? "ud"), 10) ?: "ud",
         "prevista" => round(max(0.0, $prevista), 2),
-        "cantidad" => round(max(0.0, $cantidad), 2),
-        "precio" => round(max(0.0, pm_num($item["precio_unitario_sin_iva"] ?? 0)), 6)
+        "cantidad" => round(max(0.0, $cantidad), 2)
     ];
 }
 if (empty($lineas)) {
@@ -128,13 +135,54 @@ try {
     $pdo = getDBConnection();
     $pdo->beginTransaction();
 
-    $stmt = $pdo->prepare("SELECT MIN(fecha_creacion) FROM ClimaInstal_ParteMateriales WHERE pedido = :pedido FOR UPDATE");
-    $stmt->execute([":pedido" => $pedido]);
-    $fechaCreacion = $stmt->fetchColumn();
-    $existia = is_string($fechaCreacion) && $fechaCreacion !== "";
+    // El artículo y la unidad los manda el catálogo, no la app: así una
+    // versión antigua que envíe el IdGotel acaba guardando el código CINST.
+    $catalogo = clm_consumibles_por_claves(
+        $pdo,
+        array_column($lineas, "articulo")
+    );
+    $desconocidos = [];
+    foreach ($lineas as $i => $l) {
+        $mat = $catalogo[strtoupper($l["articulo"])] ?? null;
+        if ($mat === null) {
+            $desconocidos[] = $l["articulo"];
+            continue;
+        }
+        $lineas[$i]["articulo"] = $mat["articulo"];
+        $lineas[$i]["unidad"] = $mat["unidad"];
+    }
 
-    $pdo->prepare("DELETE FROM ClimaInstal_ParteMateriales WHERE pedido = :pedido")
-        ->execute([":pedido" => $pedido]);
+    // Un mismo artículo no puede ir dos veces en el parte: si la app lo
+    // repite, se queda la última cantidad.
+    $porArticulo = [];
+    foreach ($lineas as $l) {
+        $porArticulo[$l["articulo"]] = $l;
+    }
+    $lineas = array_values($porArticulo);
+
+    $stmt = $pdo->prepare(
+        "SELECT id, articulo, articulo_padre, descripcion, unidad,
+                cantidad_prevista, cantidad, fecha_creacion
+         FROM ClimaInstal_ParteMateriales
+         WHERE pedido = :pedido
+         ORDER BY id ASC
+         FOR UPDATE"
+    );
+    $stmt->execute([":pedido" => $pedido]);
+    $previas = [];
+    $sobrantes = [];
+    $fechaCreacion = null;
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $fechaCreacion = $fechaCreacion ?? $r["fecha_creacion"];
+        $clave = (string)$r["articulo"];
+        if (isset($previas[$clave])) {
+            // Duplicado de antes de este cambio: sobra.
+            $sobrantes[] = (int)$r["id"];
+            continue;
+        }
+        $previas[$clave] = $r;
+    }
+    $existia = $fechaCreacion !== null;
 
     $ins = $pdo->prepare(
         "INSERT INTO ClimaInstal_ParteMateriales
@@ -143,28 +191,80 @@ try {
              usuario, equipo_instaladores, fecha_creacion, fecha_edicion)
          VALUES
             (:pedido, :articulo, :padre, :descripcion, :unidad, :prevista, :cantidad,
-             :hora_inicio, :hora_final, :precio,
+             NULL, NULL, 0,
              :usuario, :equipo, " . ($existia ? ":fecha_creacion" : "NOW()") . ", NOW())"
     );
+    $upd = $pdo->prepare(
+        "UPDATE ClimaInstal_ParteMateriales
+            SET articulo_padre = :padre, descripcion = :descripcion, unidad = :unidad,
+                cantidad_prevista = :prevista, cantidad = :cantidad,
+                hora_inicio = NULL, hora_final = NULL, precio_unitario_sin_iva = 0,
+                usuario = :usuario, equipo_instaladores = :equipo, fecha_edicion = NOW()
+          WHERE id = :id"
+    );
+
+    $nuevas = 0;
+    $modificadas = 0;
+    $vistas = [];
     foreach ($lineas as $l) {
-        $params = [
-            ":pedido" => $pedido,
-            ":articulo" => $l["articulo"],
+        $prevista = number_format($l["prevista"], 2, ".", "");
+        $cantidad = number_format($l["cantidad"], 2, ".", "");
+        $previa = $previas[$l["articulo"]] ?? null;
+        if ($previa === null) {
+            $params = [
+                ":pedido" => $pedido,
+                ":articulo" => $l["articulo"],
+                ":padre" => $l["padre"],
+                ":descripcion" => $l["descripcion"],
+                ":unidad" => $l["unidad"],
+                ":prevista" => $prevista,
+                ":cantidad" => $cantidad,
+                ":usuario" => $usuario !== "" ? $usuario : null,
+                ":equipo" => $equipo !== "" ? $equipo : null
+            ];
+            if ($existia) {
+                $params[":fecha_creacion"] = $fechaCreacion;
+            }
+            $ins->execute($params);
+            $nuevas++;
+            continue;
+        }
+        $vistas[$l["articulo"]] = true;
+        // fecha_edicion solo se mueve si algo cambió de verdad: GOTEL la usa
+        // para detectar qué líneas tiene que reajustar.
+        $igual = (string)$previa["articulo_padre"] === (string)$l["padre"]
+            && (string)$previa["descripcion"] === $l["descripcion"]
+            && (string)$previa["unidad"] === $l["unidad"]
+            && (float)$previa["cantidad_prevista"] === (float)$prevista
+            && (float)$previa["cantidad"] === (float)$cantidad;
+        if ($igual) {
+            continue;
+        }
+        $upd->execute([
             ":padre" => $l["padre"],
             ":descripcion" => $l["descripcion"],
             ":unidad" => $l["unidad"],
-            ":prevista" => number_format($l["prevista"], 2, ".", ""),
-            ":cantidad" => number_format($l["cantidad"], 2, ".", ""),
-            ":hora_inicio" => $horaInicio,
-            ":hora_final" => $horaFinal,
-            ":precio" => number_format($l["precio"], 6, ".", ""),
+            ":prevista" => $prevista,
+            ":cantidad" => $cantidad,
             ":usuario" => $usuario !== "" ? $usuario : null,
-            ":equipo" => $equipo !== "" ? $equipo : null
-        ];
-        if ($existia) {
-            $params[":fecha_creacion"] = $fechaCreacion;
+            ":equipo" => $equipo !== "" ? $equipo : null,
+            ":id" => (int)$previa["id"]
+        ]);
+        $modificadas++;
+    }
+
+    // Lo que ya no manda la app es que el técnico lo ha quitado del parte.
+    foreach ($previas as $clave => $r) {
+        if (!isset($vistas[$clave])) {
+            $sobrantes[] = (int)$r["id"];
         }
-        $ins->execute($params);
+    }
+    $borradas = 0;
+    if (!empty($sobrantes)) {
+        $ph = implode(",", array_fill(0, count($sobrantes), "?"));
+        $del = $pdo->prepare("DELETE FROM ClimaInstal_ParteMateriales WHERE id IN ($ph)");
+        $del->execute($sobrantes);
+        $borradas = count($sobrantes);
     }
 
     clm_jornadas_guarda($pdo, $pedido, $jornadas, $usuario, $equipo);
@@ -200,6 +300,10 @@ try {
         "success" => true,
         "message" => $existia ? "Parte de trabajo actualizado" : "Parte de trabajo guardado",
         "num_lineas" => count($lineas),
+        "lineas_nuevas" => $nuevas,
+        "lineas_modificadas" => $modificadas,
+        "lineas_borradas" => $borradas,
+        "articulos_fuera_de_catalogo" => $desconocidos,
         "num_jornadas" => count($jornadas),
         "minutos_invertidos" => (int)$minutos,
         "ubicacion_registrada" => $ubicacionRegistrada

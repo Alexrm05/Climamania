@@ -10,9 +10,9 @@
 //               con versiones antiguas de la app)
 //   meta     -> usuario, equipo, fecha_creacion, fecha_edicion
 //   lineas   -> filas guardadas (ref, descripción, unidad, prevista, real, precio)
-//               "articulo" es el IdGotel del material y "codigo" su
-//               referencia legible, resuelta contra el catálogo de
-//               consumibles (ClimaSinc_ClimaInstal_Consumibles).
+//               "articulo" es el código CINST del material, resuelto contra
+//               el catálogo de consumibles (ClimaSinc_ClimaInstal_Consumibles),
+//               que es también de donde salen la unidad y el precio.
 //   defecto  -> materiales por defecto para precargar la tabla cuando aún no
 //               hay parte: los de ClimaInstal_ParteMateriales_Relacionados
 //               cuyo articulo_padre es una de las referencias del pedido (o
@@ -216,11 +216,14 @@ try {
         $claves[] = $d["articulo"];
     }
     $catalogo = clm_consumibles_por_claves($pdo, $claves);
+    // En las líneas guardadas se respeta la descripción que dejó el técnico;
+    // en los materiales por defecto manda siempre el nombre del catálogo,
+    // porque el texto de la plantilla se desincroniza.
     foreach ($lineas as $i => $l) {
         $lineas[$i] = clm_consumible_completa($l, $catalogo);
     }
     foreach ($defecto as $i => $d) {
-        $defecto[$i] = clm_consumible_completa($d, $catalogo);
+        $defecto[$i] = clm_consumible_completa($d, $catalogo, true);
     }
 
     echo json_encode([

@@ -7,8 +7,8 @@
 // GET: api_key, q (referencia o descripción; vacío = más usados),
 //      mas_usados=1 para pedirlos explícitamente, limit (por defecto 50).
 //
-// Devuelve materiales con "articulo" = IdGotel (lo que se guarda en el parte)
-// y "codigo" = referencia legible para el técnico.
+// Devuelve materiales con "articulo" = Codigo (CINST...), que es lo que se
+// guarda en el parte y la clave con la que GOTEL descuenta stock.
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -40,9 +40,11 @@ try {
         // Los que más veces se han consumido en partes ya guardados. Si aún
         // no hay partes, se muestran los primeros del catálogo por código.
         $stmt = $pdo->prepare(
-            "SELECT c.IdGotel, c.Codigo, c.Nombre, c.Descripcion, c.UnidadEscandallo, c.Factor
+            "SELECT c.IdGotel, c.Codigo, c.Nombre, c.Descripcion, c.UnidadEscandallo, c.Factor"
+             . clm_consumibles_precio_select($pdo, "c") . "
              FROM ClimaInstal_ParteMateriales pm
-             INNER JOIN " . CLM_CONSUMIBLES_TABLA . " c ON c.IdGotel = pm.articulo
+             INNER JOIN " . CLM_CONSUMIBLES_TABLA . " c
+                     ON c.Codigo = pm.articulo OR c.IdGotel = pm.articulo
              WHERE pm.cantidad > 0
              GROUP BY c.IdGotel, c.Codigo, c.Nombre, c.Descripcion, c.UnidadEscandallo, c.Factor
              ORDER BY COUNT(*) DESC, MAX(pm.fecha_edicion) DESC
@@ -53,7 +55,8 @@ try {
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if (empty($rows)) {
             $stmt = $pdo->prepare(
-                "SELECT IdGotel, Codigo, Nombre, Descripcion, UnidadEscandallo, Factor
+                "SELECT IdGotel, Codigo, Nombre, Descripcion, UnidadEscandallo, Factor"
+                 . clm_consumibles_precio_select($pdo) . "
                  FROM " . CLM_CONSUMIBLES_TABLA . "
                  ORDER BY Codigo ASC
                  LIMIT :lim"
@@ -67,7 +70,8 @@ try {
         // colación de la tabla ya ignora mayúsculas y acentos.
         $like = "%" . str_replace(["%", "_"], ["\\%", "\\_"], $q) . "%";
         $stmt = $pdo->prepare(
-            "SELECT IdGotel, Codigo, Nombre, Descripcion, UnidadEscandallo, Factor
+            "SELECT IdGotel, Codigo, Nombre, Descripcion, UnidadEscandallo, Factor"
+             . clm_consumibles_precio_select($pdo) . "
              FROM " . CLM_CONSUMIBLES_TABLA . "
              WHERE Codigo LIKE :t OR Nombre LIKE :t2 OR Descripcion LIKE :t3
              ORDER BY (Codigo LIKE :t4) DESC, Codigo ASC

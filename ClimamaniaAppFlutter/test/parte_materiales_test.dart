@@ -35,24 +35,23 @@ void main() {
       'meta': {'usuario': 'joseluis', 'equipo': 'CLM1',
         'fecha_creacion': '2026-09-21 09:00:00', 'fecha_edicion': '2026-09-21 11:05:00'},
       'lineas': [
-        {'articulo': '19860', 'codigo': 'TUBFRIG14', 'articulo_padre': 'INSTAL40',
+        {'articulo': 'CINST0350011', 'articulo_padre': 'INSTAL40',
           'descripcion': 'Tubería 1/4"', 'unidad': 'm',
           'cantidad_prevista': '3.00', 'cantidad': '4.00',
           'precio_unitario_sin_iva': '2.500000'},
       ],
       'defecto': [
-        {'articulo': 'TUBFRIG14', 'descripcion': 'Tubería 1/4"', 'unidad': 'm',
+        {'articulo': 'CINST0350011', 'descripcion': 'Tubería 1/4"', 'unidad': 'm',
           'cantidad_prevista': '3.00', 'cantidad': '0.00'},
-        {'articulo': 'FUNGIBLE', 'descripcion': 'Fungible', 'unidad': '-',
+        {'articulo': 'CINST0200116', 'descripcion': 'Fungible', 'unidad': '-',
           'cantidad_prevista': '0.00', 'cantidad': '0.00'},
       ],
     });
     expect(p.existe, isTrue);
     expect(p.equipo, 'CLM1');
     final l = p.lineas.single;
-    expect(l.articulo, '19860'); // IdGotel: es lo que se guarda
-    expect(l.codigo, 'TUBFRIG14');
-    expect(l.referenciaVisible, 'TUBFRIG14'); // al técnico se le enseña el código
+    // Se guarda el código del catálogo: es la clave de GOTEL para el stock.
+    expect(l.articulo, 'CINST0350011');
     expect(l.articuloPadre, 'INSTAL40');
     expect(l.cantidad, 4);
     expect(l.cantidadPrevista, 3);
@@ -72,20 +71,30 @@ void main() {
     expect(p.jornadas.last.minutos, 270);
   });
 
-  test('MaterialLinea.toJson formatea cantidades y precio', () {
+  test('MaterialLinea.toJson formatea cantidades y no manda precio', () {
     final l = MaterialLinea(
-        articulo: '19860', codigo: 'X', articuloPadre: 'INSTAL40',
-        descripcion: ' Desc ',
-        unidad: 'ud', cantidadPrevista: 1, cantidad: 2, precioUnitarioSinIva: 1.5);
+        articulo: 'CINST0300010', articuloPadre: 'INSTAL40',
+        descripcion: ' Desc ', unidad: 'm',
+        cantidadPrevista: 1, cantidad: 3.5, precioUnitarioSinIva: 1.5);
+    // El precio lo pone el servidor a 0: el coste lo calcula GOTEL.
     expect(l.toJson(), {
-      'articulo': '19860',
+      'articulo': 'CINST0300010',
       'articulo_padre': 'INSTAL40',
       'descripcion': 'Desc',
-      'unidad': 'ud',
+      'unidad': 'm',
       'cantidad_prevista': '1.00',
-      'cantidad': '2.00',
-      'precio_unitario_sin_iva': '1.500000',
+      'cantidad': '3.50',
     });
+  });
+
+  test('cantidadDesdeTexto admite coma, punto y 2 decimales', () {
+    expect(cantidadDesdeTexto('3,5'), 3.5); // metros de tubo
+    expect(cantidadDesdeTexto('3.5'), 3.5);
+    expect(cantidadDesdeTexto(' 12 '), 12);
+    expect(cantidadDesdeTexto('0,125'), 0.13); // la BD solo guarda 2 decimales
+    expect(cantidadDesdeTexto(''), 0);
+    expect(cantidadDesdeTexto('dos'), 0);
+    expect(cantidadDesdeTexto('-4'), 0);
   });
 
   test('formatoCantidad y formatoDesviacion', () {
@@ -143,21 +152,18 @@ void main() {
     expect(p.ultimaFecha, '2026-09-23');
   });
 
-  test('MaterialCatalogo se convierte en línea guardando el IdGotel', () {
+  test('MaterialCatalogo se convierte en línea guardando el código', () {
     final m = MaterialCatalogo.fromJson({
-      'articulo': '19821',
-      'codigo': 'CINST0400051',
+      'articulo': 'CINST0400051',
       'descripcion': 'SOPORTE PLASTICO SUELO 450',
       'unidad': '',
       'precio_unitario_sin_iva': '0.000000',
     });
     expect(m.unidad, 'ud'); // sin unidad en el catálogo -> ud
     final l = m.comoLinea();
-    expect(l.articulo, '19821'); // IdGotel, no el Id de la tabla
-    expect(l.codigo, 'CINST0400051');
-    expect(l.referenciaVisible, 'CINST0400051');
+    expect(l.articulo, 'CINST0400051'); // el código, no el Id ni el IdGotel
     expect(l.cantidad, 1);
-    expect(l.toJson()['articulo'], '19821');
+    expect(l.toJson()['articulo'], 'CINST0400051');
   });
 
   test('PartesMateriales.fromJson agrega partes y totales', () {
@@ -169,7 +175,7 @@ void main() {
           'equipo': 'CLM1', 'num_lineas': 3, 'total_sin_iva': '12.50'},
       ],
       'totales': [
-        {'articulo': '19860', 'codigo': 'TUBFRIG14',
+        {'articulo': 'CINST0350011',
           'descripcion': 'Tubería 1/4"', 'unidad': 'm',
           'cantidad_prevista': '6.00', 'cantidad': '8.00', 'desviacion': '2.00',
           'num_partes': 2, 'importe_sin_iva': '20.00'},
@@ -178,7 +184,7 @@ void main() {
     expect(d.soloUsuario, isTrue);
     expect(d.partes.single.numLineas, 3);
     expect(d.partes.single.totalSinIva, 12.5);
-    expect(d.totales.single.referenciaVisible, 'TUBFRIG14');
+    expect(d.totales.single.articulo, 'CINST0350011');
     expect(d.totales.single.desviacion, 2);
     expect(d.totales.single.numPartes, 2);
   });

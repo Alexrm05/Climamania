@@ -220,6 +220,55 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
     });
   }
 
+  /// Pide la cantidad exacta por teclado, con decimales. La cantidad va en
+  /// la unidad del catálogo (metros, kilos, unidades): la conversión a
+  /// envases la hace GOTEL con su factor, aquí no se toca.
+  Future<void> _escribirCantidad(MaterialLinea l) async {
+    final ctrl = TextEditingController(
+        text: l.cantidad > 0 ? formatoCantidad(l.cantidad) : '');
+    final valor = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.articulo.isEmpty ? 'Cantidad' : 'Cantidad · ${l.articulo}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l.descripcion,
+                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textMuted)),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                suffixText: l.unidad,
+                hintText: '0',
+                border: const OutlineInputBorder(),
+              ),
+              onSubmitted: (v) => Navigator.of(ctx).pop(cantidadDesdeTexto(v)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(ctx).pop(cantidadDesdeTexto(ctrl.text)),
+            child: const Text('Aceptar'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (valor == null || !mounted) return;
+    setState(() => l.cantidad = valor);
+  }
+
   Future<void> _abrirBuscador() async {
     final material = await showModalBottomSheet<MaterialCatalogo>(
       context: context,
@@ -658,9 +707,7 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
           Row(
             children: [
               Expanded(
-                child: Text(l.referenciaVisible.isEmpty
-                    ? 'SIN REF.'
-                    : l.referenciaVisible,
+                child: Text(l.articulo.isEmpty ? 'SIN REF.' : l.articulo,
                     style: t.titleSmall?.copyWith(color: AppColors.primary)),
               ),
               if (l.articuloPadre.isNotEmpty)
@@ -714,6 +761,7 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
                 child: _stepper(
                   valor: l.cantidad,
                   onChanged: (v) => setState(() => l.cantidad = v),
+                  alTocar: () => _escribirCantidad(l),
                 ),
               ),
               SizedBox(
@@ -732,16 +780,21 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
 
   /// Cantidad con -/+ . En modo compacto muestra el valor y ajusta con toque
   /// largo / corto (la previsión la fija normalmente la oficina).
+  /// [alTocar] permite teclear la cantidad exacta: hay materiales que se
+  /// miden en metros o kilos y no avanzan de uno en uno.
   Widget _stepper({
     required double valor,
     required ValueChanged<double> onChanged,
     bool compacto = false,
+    VoidCallback? alTocar,
   }) {
-    final texto = Text(formatoCantidad(valor),
+    final Widget texto = Text(formatoCantidad(valor),
         textAlign: TextAlign.center,
         style: TextStyle(
             fontSize: compacto ? 14 : 16,
             fontWeight: FontWeight.bold,
+            decoration: alTocar == null ? null : TextDecoration.underline,
+            decorationStyle: TextDecorationStyle.dotted,
             color: valor <= 0 ? AppColors.textMuted : null));
     if (compacto) {
       return InkWell(
@@ -755,7 +808,17 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _qtyBtn(Icons.remove, () => onChanged((valor - 1).clamp(0, 9999))),
-        SizedBox(width: 30, child: texto),
+        SizedBox(
+          width: 30,
+          child: alTocar == null
+              ? texto
+              : InkWell(
+                  onTap: alTocar,
+                  child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: texto),
+                ),
+        ),
         _qtyBtn(Icons.add, () => onChanged(valor + 1)),
       ],
     );
@@ -950,7 +1013,7 @@ class _BuscadorMaterialesState extends State<_BuscadorMateriales> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(m.codigo.isEmpty ? 'SIN REF.' : m.codigo,
+                    Text(m.articulo.isEmpty ? 'SIN REF.' : m.articulo,
                         style: t.titleSmall?.copyWith(color: AppColors.primary)),
                     Text(m.descripcion, style: t.bodyMedium),
                   ],

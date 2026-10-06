@@ -329,7 +329,7 @@ class _PartesMaterialesScreenState extends State<PartesMaterialesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(m.referenciaVisible,
+                Text(m.articulo,
                     style: t.titleSmall?.copyWith(color: AppColors.primary)),
                 Text(m.descripcion, style: t.bodySmall),
                 Text('${m.unidad} · en ${m.numPartes} parte${m.numPartes == 1 ? '' : 's'}',

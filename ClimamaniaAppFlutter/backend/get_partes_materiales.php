@@ -63,6 +63,18 @@ try {
         $params[":usuario"] = $usuario;
     }
 
+    // El precio no se guarda en el parte (GOTEL calcula el coste con los
+    // suyos): para el importe que muestra la app se lee en vivo del catálogo.
+    // Si todavía no hay columna de precio, el importe sale 0 y la pantalla
+    // oculta la línea.
+    // Subconsulta y no JOIN: si el catálogo tuviera el código repetido, un
+    // JOIN multiplicaría las filas del parte y falsearía los totales.
+    $precioCol = clm_consumibles_precio_columna($pdo);
+    $precioExpr = $precioCol === null
+        ? "0"
+        : "(SELECT c.`" . $precioCol . "` FROM " . CLM_CONSUMIBLES_TABLA . " c
+            WHERE c.Codigo = pm.articulo OR c.IdGotel = pm.articulo LIMIT 1)";
+
     // Un parte por pedido.
     $stmt = $pdo->prepare(
         "SELECT pm.pedido,
@@ -73,10 +85,11 @@ try {
                 MAX(pm.usuario) AS usuario,
                 MAX(pm.equipo_instaladores) AS equipo,
                 COUNT(*) AS num_lineas,
-                SUM(pm.cantidad * pm.precio_unitario_sin_iva) AS total_sin_iva,
-                MAX(ev.nombrecliente) AS cliente
+                SUM(pm.cantidad * COALESCE($precioExpr, 0)) AS total_sin_iva,
+                (SELECT ev.nombrecliente FROM ClimaInstal_events ev
+                  WHERE ev.referencia = pm.pedido
+                  ORDER BY ev.start ASC LIMIT 1) AS cliente
          FROM ClimaInstal_ParteMateriales pm
-         LEFT JOIN ClimaInstal_events ev ON ev.referencia = pm.pedido
          WHERE $where
          GROUP BY pm.pedido
          ORDER BY MIN(pm.fecha_creacion) DESC"
@@ -119,7 +132,7 @@ try {
                 SUM(pm.cantidad_prevista) AS prevista,
                 SUM(pm.cantidad) AS real_total,
                 COUNT(DISTINCT pm.pedido) AS num_partes,
-                SUM(pm.cantidad * pm.precio_unitario_sin_iva) AS importe_sin_iva
+                SUM(pm.cantidad * COALESCE($precioExpr, 0)) AS importe_sin_iva
          FROM ClimaInstal_ParteMateriales pm
          WHERE $where
          GROUP BY pm.articulo
