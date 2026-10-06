@@ -18,10 +18,10 @@ $DB_PASS = "r&^%1CB%Gxfi";
 // CONFIGURACION PRESTASHOP (SEGUNDA BD)
 // -------------------------------------------
 
-$PS_DB_HOST = "153.92.42.168";
+$PS_DB_HOST = "www.climamania.com";
 $PS_DB_NAME = "climaman_2023";
 $PS_DB_USER = "climaman_2023";
-$PS_DB_PASS = "F7NDXXyyaxQrKw";
+$PS_DB_PASS = "!+6o7G]ohSEy";
 
 // Raiz de imagenes en servidor (presupuestos/firma/fotos)
 // Subdirectorios usados:

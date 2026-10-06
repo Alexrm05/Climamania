@@ -84,7 +84,6 @@ function incidencias_resolve_schema(PDO $pdo): array
         "fecha_resolucion_col" => incidencias_pick_column($mainCols, ["fecha_resolucion", "fecha_cierre", "fecha_fin"]),
         "referencia_col" => incidencias_pick_column($mainCols, [
             "referencia",
-            "num_pedido",
             "pedido",
             "referencia_instalacion",
             "referencia_pedido",

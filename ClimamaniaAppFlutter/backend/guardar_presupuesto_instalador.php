@@ -4,8 +4,6 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-date_default_timezone_set('Europe/Madrid');
-
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . "/conexion.php";
@@ -120,7 +118,6 @@ try {
 
     $pdo->beginTransaction();
 
-    $fechaLocal = date('Y-m-d H:i:s');
     $stmt = $pdo->prepare(
         "INSERT INTO ClimaInstal_PresupuestosInstalador
             (NumeroPedido, NombreCliente, DireccionCliente, Telefono, EmailCliente,
@@ -130,7 +127,7 @@ try {
              Estado, Origen, MailEnviado, date_add, date_upd)
          VALUES
             (:NumeroPedido, :NombreCliente, :DireccionCliente, :Telefono, :EmailCliente,
-             '', '', :FechaPresupuesto, :FechaAceptacion,
+             '', '', NOW(), NOW(),
              :EquipoInstaladores, :UsuarioInstalador,
              :ImporteSinIva, :ImporteIva, :ImporteConIva,
              'ACEPTADO', 'APP_ANDROID', 0, NOW(), NOW())"
@@ -145,9 +142,7 @@ try {
         ":UsuarioInstalador" => $usuarioInstalador,
         ":ImporteSinIva" => format_decimal($totals["sin_iva"], 2),
         ":ImporteIva" => format_decimal($totals["iva"], 2),
-        ":ImporteConIva" => format_decimal($totals["con_iva"], 2),
-        ":FechaPresupuesto" => $fechaLocal,
-        ":FechaAceptacion" => $fechaLocal,
+        ":ImporteConIva" => format_decimal($totals["con_iva"], 2)
     ]);
 
     $idPresupuesto = (int)$pdo->lastInsertId();
