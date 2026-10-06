@@ -138,6 +138,18 @@ function clm_consumibles_precio_columna(PDO $pdo): ?string
     return $cache;
 }
 
+/// Condición para cruzar el catálogo con una columna de nuestras tablas.
+/// La tabla sincronizada viene con otra collation (utf8mb4_general_ci) que la
+/// nuestra (utf8mb4_unicode_ci), y comparar textos entre ambas da el error
+/// 1267, así que hay que forzar una. Antes no se notaba porque se cruzaba
+/// contra IdGotel, que es numérico.
+function clm_consumibles_cruce(string $alias, string $columna): string
+{
+    $c = "`" . $alias . "`.";
+    return "(" . $c . "Codigo COLLATE utf8mb4_unicode_ci = " . $columna
+        . " OR " . $c . "IdGotel COLLATE utf8mb4_unicode_ci = " . $columna . ")";
+}
+
 /// Trozo de SELECT con el precio del catálogo bajo el alias _precio, o "" si
 /// no hay columna de precio. [$alias] es el alias de la tabla en la consulta.
 /// [$agregado] = true en consultas con GROUP BY: sin envolverlo en MAX(),

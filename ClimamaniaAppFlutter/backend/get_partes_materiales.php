@@ -73,7 +73,7 @@ try {
     $precioExpr = $precioCol === null
         ? "0"
         : "(SELECT c.`" . $precioCol . "` FROM " . CLM_CONSUMIBLES_TABLA . " c
-            WHERE c.Codigo = pm.articulo OR c.IdGotel = pm.articulo LIMIT 1)";
+            WHERE " . clm_consumibles_cruce("c", "pm.articulo") . " LIMIT 1)";
 
     // Un parte por pedido.
     $stmt = $pdo->prepare(

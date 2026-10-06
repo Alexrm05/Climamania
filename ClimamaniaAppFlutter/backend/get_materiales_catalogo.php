@@ -44,7 +44,7 @@ try {
              . clm_consumibles_precio_select($pdo, "c", true) . "
              FROM ClimaInstal_ParteMateriales pm
              INNER JOIN " . CLM_CONSUMIBLES_TABLA . " c
-                     ON c.Codigo = pm.articulo OR c.IdGotel = pm.articulo
+                     ON " . clm_consumibles_cruce("c", "pm.articulo") . "
              WHERE pm.cantidad > 0
              GROUP BY c.IdGotel, c.Codigo, c.Nombre, c.Descripcion, c.UnidadEscandallo, c.Factor
              ORDER BY COUNT(*) DESC, MAX(pm.fecha_edicion) DESC
