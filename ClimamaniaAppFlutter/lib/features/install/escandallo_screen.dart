@@ -674,11 +674,8 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          Expanded(child: Text('Ref. / Descripción', style: s)),
-          SizedBox(width: 36, child: Text('Ud.', style: s)),
-          SizedBox(width: 52, child: Text('Prev.', style: s, textAlign: TextAlign.center)),
-          SizedBox(width: 96, child: Text('Real', style: s, textAlign: TextAlign.center)),
-          SizedBox(width: 44, child: Text('Desv.', style: s, textAlign: TextAlign.right)),
+          Expanded(child: Text('Artículo', style: s)),
+          Text('Cantidad gastada', style: s),
         ],
       ),
     );
@@ -687,15 +684,9 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
   Widget _lineaWidget(MaterialLinea l) {
     final t = Theme.of(context).textTheme;
     final sinUso = l.cantidad <= 0;
-    final desv = l.desviacion;
-    final desvColor = desv > 0
-        ? AppColors.errorFg
-        : desv < 0
-            ? AppColors.infoFg
-            : AppColors.textMuted;
     return Container(
       margin: const EdgeInsets.only(top: AppSpacing.sm),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.sm, AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: sinUso ? AppColors.surface : AppColors.surfaceWarm,
         borderRadius: AppRadius.brMd,
@@ -705,71 +696,73 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _fotoArticulo(l),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: Text(l.articulo.isEmpty ? 'SIN REF.' : l.articulo,
-                    style: t.titleSmall?.copyWith(color: AppColors.primary)),
-              ),
-              if (l.articuloPadre.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(right: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                      color: AppColors.infoTint, borderRadius: AppRadius.brSm),
-                  child: Text(
-                      l.articuloPadre == '*' ? 'común' : l.articuloPadre,
-                      style: const TextStyle(
-                          fontSize: 11, color: AppColors.infoFg)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                              l.articulo.isEmpty ? 'SIN REF.' : l.articulo,
+                              style: t.titleSmall
+                                  ?.copyWith(color: AppColors.primary)),
+                        ),
+                        if (l.articuloPadre.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                                color: AppColors.infoTint,
+                                borderRadius: AppRadius.brSm),
+                            child: Text(
+                                l.articuloPadre == '*'
+                                    ? 'común'
+                                    : l.articuloPadre,
+                                style: const TextStyle(
+                                    fontSize: 11, color: AppColors.infoFg)),
+                          ),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          icon: const Icon(Icons.delete_outline,
+                              color: AppColors.errorFg),
+                          onPressed: () => _quitar(l),
+                        ),
+                      ],
+                    ),
+                    TextField(
+                      controller: _descCtrl(l),
+                      minLines: 1,
+                      maxLines: 2,
+                      style: t.bodyMedium,
+                      onChanged: (v) => l.descripcion = v,
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        border: InputBorder.none,
+                        hintText: 'Descripción',
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
                 ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.delete_outline, color: AppColors.errorFg),
-                onPressed: () => _quitar(l),
               ),
             ],
           ),
-          TextField(
-            controller: _descCtrl(l),
-            minLines: 1,
-            maxLines: 2,
-            style: t.bodyMedium,
-            onChanged: (v) => l.descripcion = v,
-            decoration: const InputDecoration(
-              isDense: true,
-              hintText: 'Descripción',
-              contentPadding: EdgeInsets.symmetric(vertical: 6),
-            ),
-          ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm),
           Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              const Spacer(),
-              SizedBox(
-                width: 36,
-                child: Text(l.unidad, style: t.bodySmall?.copyWith(color: AppColors.textMuted)),
-              ),
-              SizedBox(
-                width: 52,
-                child: _stepper(
-                  valor: l.cantidadPrevista,
-                  compacto: true,
-                  onChanged: (v) => setState(() => l.cantidadPrevista = v),
-                ),
-              ),
-              SizedBox(
-                width: 96,
-                child: _stepper(
-                  valor: l.cantidad,
-                  onChanged: (v) => setState(() => l.cantidad = v),
-                  alTocar: () => _escribirCantidad(l),
-                ),
-              ),
-              SizedBox(
-                width: 44,
-                child: Text(formatoDesviacion(desv),
-                    textAlign: TextAlign.right,
-                    style: t.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700, color: desvColor)),
+              Text(l.unidad,
+                  style: t.titleMedium?.copyWith(color: AppColors.textMuted)),
+              const SizedBox(width: AppSpacing.md),
+              _stepper(
+                valor: l.cantidad,
+                onChanged: (v) => setState(() => l.cantidad = v),
+                alTocar: () => _escribirCantidad(l),
               ),
             ],
           ),
@@ -778,46 +771,66 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
     );
   }
 
-  /// Cantidad con -/+ . En modo compacto muestra el valor y ajusta con toque
-  /// largo / corto (la previsión la fija normalmente la oficina).
-  /// [alTocar] permite teclear la cantidad exacta: hay materiales que se
-  /// miden en metros o kilos y no avanzan de uno en uno.
+  /// Foto del consumible: el técnico reconoce antes el material por la foto
+  /// que por el código.
+  Widget _fotoArticulo(MaterialLinea l) {
+    const lado = 56.0;
+    final marco = BoxDecoration(
+      color: AppColors.primaryLight,
+      borderRadius: AppRadius.brSm,
+      border: Border.all(color: AppColors.border),
+    );
+    if (l.fotoUrl.isEmpty) {
+      return Container(
+        width: lado,
+        height: lado,
+        decoration: marco,
+        child: const Icon(Icons.inventory_2_outlined,
+            size: 22, color: AppColors.textMuted),
+      );
+    }
+    return Container(
+      width: lado,
+      height: lado,
+      decoration: marco,
+      clipBehavior: Clip.antiAlias,
+      child: Image.network(
+        l.fotoUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const Icon(Icons.inventory_2_outlined,
+            size: 22, color: AppColors.textMuted),
+      ),
+    );
+  }
+
+  /// Cantidad con −/+ grandes, pensados para usarse con guantes. El número
+  /// se toca para escribir la cantidad exacta con decimales.
   Widget _stepper({
     required double valor,
     required ValueChanged<double> onChanged,
-    bool compacto = false,
-    VoidCallback? alTocar,
+    required VoidCallback alTocar,
   }) {
-    final Widget texto = Text(formatoCantidad(valor),
-        textAlign: TextAlign.center,
-        style: TextStyle(
-            fontSize: compacto ? 14 : 16,
-            fontWeight: FontWeight.bold,
-            decoration: alTocar == null ? null : TextDecoration.underline,
-            decorationStyle: TextDecorationStyle.dotted,
-            color: valor <= 0 ? AppColors.textMuted : null));
-    if (compacto) {
-      return InkWell(
-        onTap: () => onChanged(valor + 1),
-        onLongPress: () => onChanged((valor - 1).clamp(0, 9999)),
-        child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6), child: texto),
-      );
-    }
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         _qtyBtn(Icons.remove, () => onChanged((valor - 1).clamp(0, 9999))),
-        SizedBox(
-          width: 30,
-          child: alTocar == null
-              ? texto
-              : InkWell(
-                  onTap: alTocar,
-                  child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: texto),
-                ),
+        InkWell(
+          onTap: alTocar,
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 64),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              formatoCantidad(valor),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                decoration: TextDecoration.underline,
+                decorationStyle: TextDecorationStyle.dotted,
+                color: valor <= 0 ? AppColors.textMuted : null,
+              ),
+            ),
+          ),
         ),
         _qtyBtn(Icons.add, () => onChanged(valor + 1)),
       ],
@@ -835,9 +848,9 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
       child: InkWell(
         onTap: onTap,
         child: SizedBox(
-          width: 30,
-          height: 30,
-          child: Icon(icon, size: 18, color: AppColors.primary),
+          width: 48,
+          height: 48,
+          child: Icon(icon, size: 26, color: AppColors.primary),
         ),
       ),
     );

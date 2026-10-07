@@ -19,6 +19,9 @@ class MaterialLinea {
   double cantidad; // real consumida
   final double precioUnitarioSinIva;
 
+  /// Foto del artículo, para reconocerlo de un vistazo.
+  final String fotoUrl;
+
   /// Viene de los materiales por defecto (no del buscador).
   final bool porDefecto;
 
@@ -30,6 +33,7 @@ class MaterialLinea {
     this.cantidadPrevista = 0,
     required this.cantidad,
     this.precioUnitarioSinIva = 0,
+    this.fotoUrl = '',
     this.porDefecto = false,
   });
 
@@ -49,6 +53,7 @@ class MaterialLinea {
       cantidadPrevista: _num(j['cantidad_prevista']),
       cantidad: _num(j['cantidad']),
       precioUnitarioSinIva: _num(j['precio_unitario_sin_iva']),
+      fotoUrl: UiText.sanitizeDbValue(j['foto_url']?.toString()),
       porDefecto: porDefecto,
     );
   }
@@ -115,12 +120,14 @@ class MaterialCatalogo {
   final String descripcion;
   final String unidad;
   final double precioUnitarioSinIva;
+  final String fotoUrl;
 
   const MaterialCatalogo({
     required this.articulo,
     required this.descripcion,
     required this.unidad,
     this.precioUnitarioSinIva = 0,
+    this.fotoUrl = '',
   });
 
   factory MaterialCatalogo.fromJson(Map<String, dynamic> j) {
@@ -131,6 +138,7 @@ class MaterialCatalogo {
       descripcion: s('descripcion'),
       unidad: unidad.isEmpty ? 'ud' : unidad,
       precioUnitarioSinIva: _num(j['precio_unitario_sin_iva']),
+      fotoUrl: s('foto_url'),
     );
   }
 
@@ -141,6 +149,7 @@ class MaterialCatalogo {
         unidad: unidad,
         cantidad: 1,
         precioUnitarioSinIva: precioUnitarioSinIva,
+        fotoUrl: fotoUrl,
       );
 }
 

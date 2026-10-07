@@ -184,6 +184,19 @@ void main() {
     });
   });
 
+  test('la línea arrastra la foto del artículo', () {
+    final l = MaterialLinea.fromJson({
+      'articulo': 'CINST0511438',
+      'descripcion': 'TUBO COBRE DOBLE AISLADO AA 1/4-3/8',
+      'unidad': 'm',
+      'cantidad': '2.00',
+      'foto_url': 'https://clminstal.es/imagenes/consumibles/CINST0511438.jpg',
+    });
+    expect(l.fotoUrl.endsWith('CINST0511438.jpg'), isTrue);
+    // Sin foto en el catálogo la línea se pinta con el icono genérico.
+    expect(MaterialLinea.fromJson({'articulo': 'X', 'cantidad': '1'}).fotoUrl, '');
+  });
+
   test('MaterialCatalogo se convierte en línea guardando el código', () {
     final m = MaterialCatalogo.fromJson({
       'articulo': 'CINST0400051',

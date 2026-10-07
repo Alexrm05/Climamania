@@ -8,10 +8,10 @@
 require_once __DIR__ . "/consumibles_common.php";
 require_once __DIR__ . "/presupuestos_api_common.php";
 
-/// Destinatario de los pedidos. Mientras se prueba va a jlrodriguez; para
-/// pasarlo a compras basta con crear o editar la variable
-/// 'emailPedidosConsumibles' en variables_generales, sin tocar código.
-const CLM_PEDIDOS_EMAIL_PRUEBAS = "jlrodriguez@climamania.com";
+/// Destinatario de los pedidos. Para cambiarlo sin tocar código basta con
+/// crear o editar la variable 'emailPedidosConsumibles' en
+/// variables_generales.
+const CLM_PEDIDOS_EMAIL_DEFECTO = "compras@climamania.com";
 const CLM_PEDIDOS_EMAIL_VARIABLE = "emailPedidosConsumibles";
 
 function clm_pedidos_destino(PDO $pdo): string
@@ -30,7 +30,7 @@ function clm_pedidos_destino(PDO $pdo): string
     } catch (PDOException $e) {
         // Sin la variable (o sin la tabla) se usa el destino de pruebas.
     }
-    return CLM_PEDIDOS_EMAIL_PRUEBAS;
+    return CLM_PEDIDOS_EMAIL_DEFECTO;
 }
 
 function clm_num($v): float

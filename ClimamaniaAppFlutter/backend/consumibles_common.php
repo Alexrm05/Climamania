@@ -13,6 +13,20 @@
 
 const CLM_CONSUMIBLES_TABLA = "ClimaSinc_ClimaInstal_Consumibles";
 
+/// URL de la foto del consumible. Las imágenes viven en
+/// clminstal.es/imagenes/consumibles con el código como nombre, así que si la
+/// tabla no trae FotoUrl se compone igual.
+function clm_consumible_foto(string $fotoUrl, string $codigo): string
+{
+    $url = trim($fotoUrl);
+    if ($url !== "") {
+        return $url;
+    }
+    return $codigo === ""
+        ? ""
+        : "https://clminstal.es/imagenes/consumibles/" . rawurlencode($codigo) . ".jpg";
+}
+
 /// Fila de la tabla -> material tal como lo consume la app.
 function clm_consumible_salida(array $r): array
 {
@@ -29,6 +43,12 @@ function clm_consumible_salida(array $r): array
         "descripcion" => $nombre !== "" ? $nombre : $desc,
         "unidad" => $unidad !== "" ? $unidad : "ud",
         "factor" => number_format((float)($r["Factor"] ?? 1), 4, ".", ""),
+        // Foto del artículo, para que el técnico reconozca el material de un
+        // vistazo. Si la tabla no la trae, se arma por convenio con el código.
+        "foto_url" => clm_consumible_foto(
+            (string)($r["FotoUrl"] ?? ""),
+            trim((string)($r["Codigo"] ?? ""))
+        ),
         // El precio no se guarda en el parte: se lee en vivo del catálogo
         // cuando GOTEL añada la columna de coste (clm_consumibles_precio_columna).
         "precio_unitario_sin_iva" => isset($r["_precio"])
@@ -51,7 +71,7 @@ function clm_consumibles_por_claves(PDO $pdo, array $claves): array
         return [];
     }
     $ph = implode(",", array_fill(0, count($claves), "?"));
-    $sql = "SELECT IdGotel, Codigo, Nombre, Descripcion, UnidadEscandallo, Factor"
+    $sql = "SELECT IdGotel, Codigo, Nombre, Descripcion, UnidadEscandallo, Factor, FotoUrl"
         . clm_consumibles_precio_select($pdo) . "
             FROM " . CLM_CONSUMIBLES_TABLA . "
             WHERE IdGotel IN ($ph) OR Codigo IN ($ph)";
@@ -106,6 +126,7 @@ function clm_consumible_completa(
     }
     $linea["unidad"] = $mat["unidad"];
     $linea["precio_unitario_sin_iva"] = $mat["precio_unitario_sin_iva"];
+    $linea["foto_url"] = $mat["foto_url"];
     $linea["en_catalogo"] = true;
     return $linea;
 }
