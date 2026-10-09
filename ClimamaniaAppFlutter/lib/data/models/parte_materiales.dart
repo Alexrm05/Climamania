@@ -3,6 +3,17 @@ import '../../core/ui_text.dart';
 double _num(dynamic v) =>
     double.tryParse((v ?? '').toString().replaceAll(',', '.')) ?? 0;
 
+/// Foto del consumible. Si el servidor no manda la suya, se compone con el
+/// código: las imágenes viven en clminstal.es/imagenes/consumibles con el
+/// código como nombre. Así la foto sale aunque el catálogo no la tenga.
+String urlFotoConsumible(String url, String codigo) {
+  final u = url.trim();
+  if (u.isNotEmpty) return u;
+  final c = codigo.trim();
+  if (c.isEmpty) return '';
+  return 'https://clminstal.es/imagenes/consumibles/${Uri.encodeComponent(c)}.jpg';
+}
+
 /// Línea del parte de trabajo: un material con su previsión y su consumo
 /// real. Mutable a propósito: la pantalla la edita en sitio.
 class MaterialLinea {
@@ -53,7 +64,10 @@ class MaterialLinea {
       cantidadPrevista: _num(j['cantidad_prevista']),
       cantidad: _num(j['cantidad']),
       precioUnitarioSinIva: _num(j['precio_unitario_sin_iva']),
-      fotoUrl: UiText.sanitizeDbValue(j['foto_url']?.toString()),
+      fotoUrl: urlFotoConsumible(
+        UiText.sanitizeDbValue(j['foto_url']?.toString()),
+        UiText.sanitizeDbValue(j['articulo']?.toString()),
+      ),
       porDefecto: porDefecto,
     );
   }
@@ -138,7 +152,7 @@ class MaterialCatalogo {
       descripcion: s('descripcion'),
       unidad: unidad.isEmpty ? 'ud' : unidad,
       precioUnitarioSinIva: _num(j['precio_unitario_sin_iva']),
-      fotoUrl: s('foto_url'),
+      fotoUrl: urlFotoConsumible(s('foto_url'), s('articulo')),
     );
   }
 

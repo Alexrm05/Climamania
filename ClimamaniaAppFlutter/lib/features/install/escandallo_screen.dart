@@ -774,10 +774,10 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
   /// Foto del consumible: el técnico reconoce antes el material por la foto
   /// que por el código.
   Widget _fotoArticulo(MaterialLinea l) {
-    const lado = 56.0;
+    const lado = 104.0;
     final marco = BoxDecoration(
       color: AppColors.primaryLight,
-      borderRadius: AppRadius.brSm,
+      borderRadius: AppRadius.brMd,
       border: Border.all(color: AppColors.border),
     );
     if (l.fotoUrl.isEmpty) {
@@ -786,7 +786,7 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
         height: lado,
         decoration: marco,
         child: const Icon(Icons.inventory_2_outlined,
-            size: 22, color: AppColors.textMuted),
+            size: 36, color: AppColors.textMuted),
       );
     }
     return Container(
@@ -798,7 +798,7 @@ class _EscandalloScreenState extends State<EscandalloScreen> {
         l.fotoUrl,
         fit: BoxFit.cover,
         errorBuilder: (_, _, _) => const Icon(Icons.inventory_2_outlined,
-            size: 22, color: AppColors.textMuted),
+            size: 36, color: AppColors.textMuted),
       ),
     );
   }

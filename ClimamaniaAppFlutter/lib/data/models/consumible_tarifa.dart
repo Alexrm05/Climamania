@@ -1,4 +1,5 @@
 import '../../core/ui_text.dart';
+import 'parte_materiales.dart' show urlFotoConsumible;
 
 double _num(dynamic v) =>
     double.tryParse((v ?? '').toString().replaceAll(',', '.')) ?? 0;
@@ -67,7 +68,7 @@ class ConsumibleTarifa {
       precioFormato: _num(j['precio_formato']),
       precioUnidad: _num(j['precio_unidad']),
       unidadesPorFormato: _num(j['unidades_por_formato']),
-      fotoUrl: s('foto_url'),
+      fotoUrl: urlFotoConsumible(s('foto_url'), s('codigo')),
       fechaPrecios: s('fecha_precios'),
     );
   }
